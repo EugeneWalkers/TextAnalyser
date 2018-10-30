@@ -10,9 +10,10 @@ public final class DataKeeper {
 
         if (file.exists()){
             List<Pair> pairs = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
 
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
                 StringBuilder builder = new StringBuilder();
+
                 while (!builder.append(reader.readLine()).toString().equals("null")) {
                     String[] strings = builder.toString().split("\t");
                     pairs.add(new Pair(strings[0], Integer.parseInt(strings[1])));
@@ -37,7 +38,9 @@ public final class DataKeeper {
                 e.printStackTrace();
             }
         }
+
         try(PrintWriter writer = new PrintWriter(file)){
+
             for (int i = 0; i < pairs.size(); i++) {
                 final Pair pair = pairs.get(i);
                 writer.print(pair.toString());
@@ -55,8 +58,10 @@ public final class DataKeeper {
         StringBuilder temporaryString = new StringBuilder();
         StringBuilder text = new StringBuilder();
         BufferedReader reader = null;
+
         try {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+
             while (!temporaryString.append(reader.readLine()).toString().equals("null")) {
                 text.append(temporaryString.toString());
                 temporaryString.delete(0, temporaryString.length());
@@ -72,6 +77,7 @@ public final class DataKeeper {
                 e.printStackTrace();
             }
         }
+
         return text.toString();
     }
 
