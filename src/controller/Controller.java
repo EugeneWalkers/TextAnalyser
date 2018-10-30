@@ -217,4 +217,9 @@ public class Controller {
         outSort.delete();
         temporaryOutput.delete();
     }
+
+    public void deleteAll(){
+        files.clear();
+        dictionary.delete();
+    }
 }

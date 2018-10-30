@@ -9,13 +9,12 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.io.*;
-import java.util.List;
 import java.util.Vector;
 
-public class Frame extends JFrame {
+public class DictionaryFrame extends JFrame {
 
     private static final String DIR = "docs";
-    private static Frame frame = null;
+    private static DictionaryFrame dictionaryFrame = null;
     private final Vector headers;
     private final DefaultTableModel model;
     private final JTable dictionaryTable;
@@ -26,6 +25,7 @@ public class Frame extends JFrame {
     private final GridBagConstraints constraints;
     private final JPanel mainPanel;
     private final JButton handler;
+    private final JButton cleaner;
 
     private File file;
 
@@ -48,6 +48,9 @@ public class Frame extends JFrame {
         handler = new JButton("Составить словарь");
         setHandlerListener();
 
+        cleaner = new JButton("Удалить словарь");
+        setCleanerListener();
+
         controller = new Controller();
 
         headers = new Vector();
@@ -55,7 +58,7 @@ public class Frame extends JFrame {
         headers.add("Количество повторений");
 
         dictionaryTable = new JTable();
-        model = new DefaultTableModel(){
+        model = new DefaultTableModel() {
 
             @Override
             public Class getColumnClass(int column) {
@@ -89,18 +92,18 @@ public class Frame extends JFrame {
         model.setDataVector(controller.getData(), headers);
     }
 
-    private Frame() {
+    private DictionaryFrame() {
         super("Анализатор текста");
         setFrame();
         setComponents();
         setMenu();
     }
 
-    public static Frame getInstance() {
-        if (frame == null) {
-            frame = new Frame();
+    public static DictionaryFrame getInstance() {
+        if (dictionaryFrame == null) {
+            dictionaryFrame = new DictionaryFrame();
         }
-        return frame;
+        return dictionaryFrame;
     }
 
     private void setFrame() {
@@ -132,6 +135,14 @@ public class Frame extends JFrame {
         }).start());
     }
 
+    private void setCleanerListener() {
+        cleaner.addActionListener(listener -> {
+            controller.deleteAll();
+            model.setDataVector(controller.getData(), headers);
+            model.fireTableDataChanged();
+        });
+    }
+
     private void setComponents() {
         setLayout(new GridLayout(1, 1));
         add(mainPanel);
@@ -156,14 +167,18 @@ public class Frame extends JFrame {
         mainPanel.add(scrollerForResults, constraints);
 
         constraints.gridx = 0;
+        constraints.gridy = 1;
         constraints.insets = new Insets(5, 10, 0, 5);
         constraints.weighty = 1;
         constraints.gridwidth = 1;
         constraints.gridheight = 1;
-        constraints.gridy = 1;
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.fill = GridBagConstraints.NONE;
         mainPanel.add(handler, constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        mainPanel.add(cleaner, constraints);
 
         constraints.insets = new Insets(0, 10, 10, 10);
         constraints.gridx = 0;

@@ -1,10 +1,10 @@
-import view.Frame;
+import view.DictionaryFrame;
 
 public class Main {
 
     public static void main(String args[]) {
-        Frame frame = Frame.getInstance();
-        frame.setVisible(true);
+        DictionaryFrame dictionaryFrame = DictionaryFrame.getInstance();
+        dictionaryFrame.setVisible(true);
 
     }
 }
