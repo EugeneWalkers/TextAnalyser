@@ -1,0 +1,2 @@
+NN;	aaaa	1	aaaa;	NN;
+NN;	b	0	b;	NN;

@@ -1,21 +1,24 @@
 package view;
 
 import controller.Controller;
+import controller.SimpleTableModel;
+import utilities.Constants;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.io.*;
-import java.util.Vector;
+
+import static utilities.Constants.HEADERS;
 
 public class DictionaryFrame extends JFrame {
 
     private static final String DIR = "docs";
     private static DictionaryFrame dictionaryFrame = null;
-    private final Vector headers;
+
     private final DefaultTableModel model;
     private final JTable dictionaryTable;
     private final JFileChooser chooser;
@@ -26,6 +29,11 @@ public class DictionaryFrame extends JFrame {
     private final JPanel mainPanel;
     private final JButton handler;
     private final JButton cleaner;
+    private final JButton adder;
+    private final JButton searcher;
+    private final JButton painter;
+    private final DialogInputWord dialogInputWord;
+    private final SearchFrame searchFrame;
 
     private File file;
 
@@ -33,67 +41,43 @@ public class DictionaryFrame extends JFrame {
 
     {
         chooser = new JFileChooser(DIR);
-
         reader = new ReaderFromFile();
-
         constraints = new GridBagConstraints();
-
         bar = new JProgressBar();
-
         mainPanel = new JPanel();
-
         originalTextArea = new JTextArea();
-        originalTextArea.setLineWrap(true);
-
         handler = new JButton("Составить словарь");
-        setHandlerListener();
-
         cleaner = new JButton("Удалить словарь");
-        setCleanerListener();
-
-        controller = new Controller();
-
-        headers = new Vector();
-        headers.add("Слово");
-        headers.add("Количество повторений");
-
+        adder = new JButton("Добавить слово");
+        searcher = new JButton("Найти слово в словаре");
+        painter = new JButton("Раскрасить текст");
+        controller = Controller.getInstance();
         dictionaryTable = new JTable();
-        model = new DefaultTableModel() {
+        model = new SimpleTableModel();
 
+        dialogInputWord = new DialogInputWord() {
             @Override
-            public Class getColumnClass(int column) {
-                switch (column) {
-                    default:
-                    case 0:
-                        return String.class;
-                    case 1:
-                        return Integer.class;
-                }
+            public void actionPerformed(final ActionEvent e) {
+                new Thread(() -> {
+                    dialogInputWord.setVisible(false);
+                    controller.addWord(dialogInputWord.getString());
+                    updateTable();
+                }).start();
             }
         };
-        model.setColumnIdentifiers(headers);
-        dictionaryTable.setModel(model);
 
-        final TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
-        sorter.setSortsOnUpdates(true);
-
-        dictionaryTable.setRowSorter(sorter);
-
-        model.addTableModelListener(new TableModelListener() {
+        searchFrame = new SearchFrame(){
             @Override
             public void tableChanged(TableModelEvent e) {
-                if (e.getColumn() == 0) {
-                    controller.notifyTableChanged(model.getDataVector());
-                    model.setDataVector(controller.getData(), headers);
-                    model.fireTableDataChanged();
-                }
+                super.tableChanged(e);
+                DictionaryFrame.this.updateTable();
             }
-        });
-        model.setDataVector(controller.getData(), headers);
+        };
     }
 
     private DictionaryFrame() {
         super("Анализатор текста");
+        init();
         setFrame();
         setComponents();
         setMenu();
@@ -103,44 +87,107 @@ public class DictionaryFrame extends JFrame {
         if (dictionaryFrame == null) {
             dictionaryFrame = new DictionaryFrame();
         }
+
         return dictionaryFrame;
     }
 
+    private void init() {
+        setupComponents();
+        setListeners();
+    }
+
+    private void setupComponents() {
+        originalTextArea.setLineWrap(true);
+
+        model.setColumnIdentifiers(HEADERS);
+        dictionaryTable.setModel(model);
+
+        final TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+        sorter.setSortsOnUpdates(true);
+
+        dictionaryTable.setRowSorter(sorter);
+
+        model.addTableModelListener(e -> {
+            if (e.getColumn() == Constants.WORD) {
+                controller.notifyTableChanged(model.getDataVector());
+                updateTable();
+            }
+        });
+        model.setDataVector(controller.getDataInVector(), HEADERS);
+    }
+
+    private void setListeners() {
+        setHandlerListener();
+        setCleanerListener();
+        setAdderListener();
+        setSearcherListener();
+        setPainterListener();
+    }
+
     private void setFrame() {
-        setSize(1000, 500);
+        setSize(1500, 700);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
     private void setHandlerListener() {
-        handler.addActionListener(listener -> new Thread(() -> {
-            bar.setIndeterminate(true);
+        handler.addActionListener(listener -> {
+            if (!originalTextArea.getText().equals("")) {
+                new Thread(() -> {
+                    bar.setIndeterminate(true);
 
-            handler.setEnabled(false);
+                    handler.setEnabled(false);
 
-            controller.pushFile(file);
-            controller.addTextAndRewriteFile(originalTextArea.getText());
-            controller.handle();
+                    controller.pushFile(file);
+                    controller.addTextAndRewriteFile(originalTextArea.getText());
+                    controller.handle();
 
-            model.setDataVector(controller.getData(), headers);
+                    model.setDataVector(controller.getDataInVector(), HEADERS);
 
-            originalTextArea.setText("");
+                    originalTextArea.setText("");
 
-            file = null;
+                    file = null;
 
-            handler.setEnabled(true);
+                    handler.setEnabled(true);
 
-            bar.setIndeterminate(false);
-        }).start());
+                    bar.setIndeterminate(false);
+                }).start();
+            }
+        });
     }
 
     private void setCleanerListener() {
-        cleaner.addActionListener(listener -> {
-            controller.deleteAll();
-            model.setDataVector(controller.getData(), headers);
-            model.fireTableDataChanged();
+        new Thread(() -> {
+            cleaner.addActionListener(listener -> {
+                controller.deleteAll();
+                updateTable();
+            });
+        }).start();
+    }
+
+    private void setAdderListener() {
+        adder.addActionListener(listener -> {
+            dialogInputWord.setVisible(true);
         });
+    }
+
+    private void setSearcherListener() {
+        searcher.addActionListener(listener -> {
+            searchFrame.clear();
+            searchFrame.setVisible(true);
+        });
+    }
+
+    private void setPainterListener(){
+        painter.addActionListener(listener ->{
+            new Thread(() -> controller.paintText(originalTextArea.getText())).start();
+        });
+    }
+
+    private void updateTable() {
+        model.setDataVector(controller.getDataInVector(), HEADERS);
+        model.fireTableDataChanged();
     }
 
     private void setComponents() {
@@ -150,6 +197,19 @@ public class DictionaryFrame extends JFrame {
 
         final JScrollPane scrollerForOriginalTextArea = new JScrollPane(originalTextArea);
         final JScrollPane scrollerForResults = new JScrollPane(dictionaryTable);
+        final JPanel leftButtons = new JPanel();
+        final JPanel rightButtons = new JPanel();
+
+        final GridLayout borderLayout = new GridLayout(1, 0, 5, 5);
+        borderLayout.setVgap(1);
+        leftButtons.setLayout(borderLayout);
+        leftButtons.add(handler);
+        leftButtons.add(adder);
+        leftButtons.add(searcher);
+        leftButtons.add(painter);
+
+        rightButtons.setLayout(borderLayout);
+        rightButtons.add(cleaner);
 
         constraints.insets = new Insets(5, 10, 5, 10);
         constraints.gridx = 0;
@@ -163,22 +223,24 @@ public class DictionaryFrame extends JFrame {
 
         constraints.gridx = 1;
         constraints.gridwidth = 1;
+        constraints.weightx = 3;
         constraints.anchor = GridBagConstraints.NORTH;
         mainPanel.add(scrollerForResults, constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
         constraints.insets = new Insets(5, 10, 0, 5);
+        constraints.weightx = 1;
         constraints.weighty = 1;
         constraints.gridwidth = 1;
         constraints.gridheight = 1;
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.fill = GridBagConstraints.NONE;
-        mainPanel.add(handler, constraints);
+        mainPanel.add(leftButtons, constraints);
 
         constraints.gridx = 1;
         constraints.gridy = 1;
-        mainPanel.add(cleaner, constraints);
+        mainPanel.add(rightButtons, constraints);
 
         constraints.insets = new Insets(0, 10, 10, 10);
         constraints.gridx = 0;

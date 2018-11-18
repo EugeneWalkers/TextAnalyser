@@ -1,28 +1,34 @@
 package controller;
 
-import textHandler.MapReduce;
+import javafx.util.Pair;
+import textHandlers.Lemmatizer;
+import textHandlers.MapReduce;
+import utilities.Constants;
 import utilities.DataKeeper;
-import utilities.Pair;
+import utilities.StringUtilities;
+import utilities.WordData;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 
-import static textHandler.MapReduce.MAP;
-import static textHandler.MapReduce.REDUCE;
+import static textHandlers.MapReduce.MAP;
+import static textHandlers.MapReduce.REDUCE;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class Controller {
 
+    private static final Controller INSTANCE = new Controller();
 
     private final static String OUT_MAP_TXT = "output/outMap.txt";
     private final static String OUT_SORT_TXT = "output/outSort.txt";
+
     private final File outMap;
     private final File outSort;
     private final File dictionary;
     private final File temporaryOutput;
+    private final Lemmatizer lemmatizer;
+
     private List<File> files;
     private MapReduce mapReduce;
     private int defaultFileCounter;
@@ -31,28 +37,64 @@ public class Controller {
         outMap = new File(OUT_MAP_TXT);
         outSort = new File(OUT_SORT_TXT);
         defaultFileCounter = 0;
+        lemmatizer = new Lemmatizer();
         files = new ArrayList<>();
         dictionary = new File("output/output.txt");
         temporaryOutput = new File("output/temp.txt");
     }
 
-    public Controller() {
+    private Controller() {
         mapReduce = new MapReduce();
     }
 
-    public Vector<Vector> getData() {
-        final List<Pair> data = DataKeeper.readPairsFromFile(dictionary);
-        Vector<Vector> dataInStringMatrix = new Vector<>();
-        for (int i = 0; i < data.size(); i++) {
-            Vector temp = new Vector();
-            temp.add(data.get(i).getWord());
-            temp.add(data.get(i).getNumber());
-            dataInStringMatrix.add(temp);
-        }
-        return dataInStringMatrix;
+    public static Controller getInstance() {
+        return INSTANCE;
     }
 
-    public File createDefaultFile() {
+    private List<WordData> getData() {
+        return DataKeeper.readWordDatasFromFile(dictionary);
+    }
+
+    public Vector<Vector> getDataInVector() {
+        final List<WordData> data = getData();
+        final Vector<Vector> dataInVector = new Vector<>();
+
+        for (final WordData aData : data) {
+            dataInVector.add(aData.toVector());
+        }
+
+        return dataInVector;
+    }
+
+    public List<WordData> getDataByWord(final String word) {
+        final List<WordData> data = getData();
+        final List<WordData> newData = new Vector<>();
+
+        for (final WordData wordData : data) {
+            if (wordData.getWord().equals(word)) {
+                newData.add(0, wordData);
+                continue;
+            }
+            if (StringUtilities.isSubEquals(wordData.getWord(), word)) {
+                newData.add(wordData);
+            }
+        }
+
+        return newData;
+    }
+
+    public Vector<Vector> getDataByWordForTable(final String word) {
+        final Vector<Vector> newData = new Vector<>();
+        final List<WordData> dataInList = getDataByWord(word);
+
+        for (final WordData data : dataInList) {
+            newData.add(data.toVector());
+        }
+
+        return newData;
+    }
+
+    private File createDefaultFile() {
         final File newFile = new File("default " + defaultFileCounter++ + ".txt");
 
         try {
@@ -72,7 +114,7 @@ public class Controller {
         }
     }
 
-    public File pullFile() {
+    private File pullFile() {
         return files.get(files.size() - 1);
     }
 
@@ -90,21 +132,45 @@ public class Controller {
         }
 
         DataKeeper.writeTextToFile(text, file);
-
     }
 
     public void handle() {
-
         mapReduce.runCommand(MAP, files.get(files.size() - 1), outMap);
-        final List<Pair> pairs = DataKeeper.readPairsFromFile(outMap);
-        Collections.sort(pairs);
-        DataKeeper.writePairsToFile(pairs, outSort);
+        sort();
         mapReduce.runCommand(REDUCE, outSort, temporaryOutput);
+        rewritePairsToWordData();
         mergeFiles();
         sortPairs();
         cleanFiles();
     }
 
+    public void addWord(final String word) {
+        DataKeeper.writeTextToFile(WordData.Builder.buildEmptyWord(word).toString(), temporaryOutput);
+        mergeFiles();
+        sortPairs();
+        temporaryOutput.delete();
+    }
+
+    public void paintText(final String text) {
+        DataKeeper.writeTextToFile(lemmatizer.paintTextWithPosTags(text), new File("painted.txt"/*pullFile().getName().split("\\.")[0] + " painted.txt")*/));
+    }
+
+    private void rewritePairsToWordData() {
+        final List<Pair<String, Integer>> pairs = DataKeeper.readPairsFromFile(temporaryOutput);
+        temporaryOutput.delete();
+        final List<WordData> wordDatas = new ArrayList<>();
+        for (final Pair<String, Integer> pair : pairs) {
+            System.out.println(pair.toString());
+            wordDatas.add(WordData.Builder.buildWord(pair.getKey(), pair.getValue()));
+        }
+        DataKeeper.writeWordDatasToFile(wordDatas, temporaryOutput);
+    }
+
+    private void sort() {
+        final List<Pair<String, Integer>> pairs = DataKeeper.readPairsFromFile(outMap);
+        pairs.sort(Comparator.comparing(Pair::getKey));
+        DataKeeper.writePairsToFile(pairs, outSort);
+    }
 
     private void mergeFiles() {
         if (!dictionary.exists()) {
@@ -115,18 +181,18 @@ public class Controller {
             }
         }
 
-        List<Pair> newPairs = DataKeeper.readPairsFromFile(temporaryOutput);
-        List<Pair> oldPairs = DataKeeper.readPairsFromFile(dictionary);
+        final List<WordData> newPairs = DataKeeper.readWordDatasFromFile(temporaryOutput);
+        final List<WordData> oldPairs = DataKeeper.readWordDatasFromFile(dictionary);
 
         boolean isExist = false;
 
         while (!newPairs.isEmpty()) {
-            final Pair pair = newPairs.get(0);
+            final WordData pair = newPairs.get(0);
 
-            for (int j = 0; j < oldPairs.size(); j++) {
-                if (oldPairs.get(j).getWord().equals(pair.getWord())) {
+            for (final WordData oldPair : oldPairs) {
+                if (oldPair.getWord().equals(pair.getWord())) {
                     isExist = true;
-                    oldPairs.get(j).setNumber(oldPairs.get(j).getNumber() + pair.getNumber());
+                    oldPair.setNumber(oldPair.getNumber() + pair.getNumber());
                     newPairs.remove(pair);
                 }
             }
@@ -139,22 +205,54 @@ public class Controller {
             isExist = false;
         }
 
-        DataKeeper.writePairsToFile(oldPairs, dictionary);
+        DataKeeper.writeWordDatasToFile(oldPairs, dictionary);
     }
 
-    public void sortPairs() {
-        final List<Pair> pairs = DataKeeper.readPairsFromFile(dictionary);
-
-        Collections.sort(pairs);
-
-        DataKeeper.writePairsToFile(pairs, dictionary);
+    private void sortPairs() {
+        final List<WordData> wordDatas = DataKeeper.readWordDatasFromFile(dictionary);
+        Collections.sort(wordDatas);
+        DataKeeper.writeWordDatasToFile(wordDatas, dictionary);
     }
 
-    public void notifyTableChanged(Vector<Vector> newData) {
-        final List<Pair> oldData = DataKeeper.readPairsFromFile(dictionary);
+    public void notifyTableChanged(final Vector<Vector> newData) {
+        final List<WordData> oldData = DataKeeper.readWordDatasFromFile(dictionary);
 
         if (oldData.size() == newData.size()) {
             final String[] replaces = changeElementInDictionaryAndConcat(oldData, newData);
+
+            if (replaces != null) {
+                replaceStringInAllFiles(replaces[0], replaces[1]);
+            }
+        }
+    }
+
+    public void notifyTableChanged(final Vector<Vector> newData, final String word) {
+        final List<WordData> oldData = getDataByWord(word);
+
+        int i = -1;
+
+        for (i = 0; i < oldData.size(); i++) {
+            if (!newData.get(i).get(Constants.WORD).equals(oldData.get(i).getWord())) {
+                break;
+            }
+        }
+
+        final WordData oldWordData = oldData.get(i);
+        final Vector newWordData = newData.get(i);
+
+        final List<WordData> fullCachedOld = getData();
+        final Vector<Vector> fullCachedToChange = getDataInVector();
+
+        for (int j=0; j<fullCachedToChange.size(); j++){
+            if (fullCachedToChange.get(i).get(Constants.WORD).equals(oldWordData.getWord())){
+                final WordData data = new WordData(newWordData);
+                fullCachedToChange.set(i, data.toVector());
+                break;
+            }
+        }
+
+        if (oldData.size() == newData.size()) {
+            final String[] replaces = changeElementInDictionaryAndConcat(fullCachedOld, fullCachedToChange);
 
             if (replaces != null) {
                 replaceStringInAllFiles(replaces[0], replaces[1]);
@@ -169,11 +267,11 @@ public class Controller {
         }
     }
 
-    private String[] changeElementInDictionaryAndConcat(final List<Pair> oldData, final Vector<Vector> newData) {
+    private String[] changeElementInDictionaryAndConcat(final List<WordData> oldData, final Vector<Vector> newData) {
         int index = -1;
 
         for (int i = 0; i < oldData.size(); i++) {
-            if (!oldData.get(i).getWord().equals(newData.get(i).get(0))) {
+            if (!oldData.get(i).getWord().equals(newData.get(i).get(Constants.WORD))) {
                 index = i;
                 break;
             }
@@ -183,42 +281,48 @@ public class Controller {
             return null;
         }
 
+        newData.get(index).set(Constants.WORD, ((String) newData.get(index).get(Constants.WORD)).toLowerCase());
+
         final String[] result = new String[2];
         result[0] = oldData.get(index).getWord();
-        result[1] = (String) newData.get(index).get(0);
+        result[1] = ((String) newData.get(index).get(Constants.WORD));
 
-        final Pair changedPair = new Pair((String) newData.get(index).get(0), (int) newData.get(index).get(1));
+        final WordData changedPair = WordData.Builder.buildWord(
+                ((String) newData.get(index).get(Constants.WORD)),
+                (int) newData.get(index).get(Constants.COUNT)
+        );
 
         boolean isNew = true;
 
         for (int i = 0; i < newData.size(); i++) {
             if (changedPair.getWord().equals(oldData.get(i).getWord()) && i != index) {
                 isNew = false;
-                final Pair pairInWhatAdd = oldData.get(i);
-                pairInWhatAdd.setNumber(oldData.get(i).getNumber() + changedPair.getNumber());
+                final WordData wordDataInWhatAdd = oldData.get(i);
+                wordDataInWhatAdd.setNumber(oldData.get(i).getNumber() + changedPair.getNumber());
 
                 break;
             }
         }
 
         if (isNew) {
-            oldData.get(index).setWord((String) newData.get(index).get(0));
+            final WordData data = WordData.Builder.buildWord((String) newData.get(index).get(Constants.WORD), oldData.get(index).getNumber());
+            oldData.set(index, data);
         } else {
             oldData.remove(index);
         }
 
-        DataKeeper.writePairsToFile(oldData, dictionary);
+        DataKeeper.writeWordDatasToFile(oldData, dictionary);
 
         return result;
     }
 
-    public void cleanFiles() {
+    private void cleanFiles() {
         outMap.delete();
         outSort.delete();
         temporaryOutput.delete();
     }
 
-    public void deleteAll(){
+    public void deleteAll() {
         files.clear();
         dictionary.delete();
     }
