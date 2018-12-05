@@ -118,11 +118,11 @@ public class Controller {
         return files.get(files.size() - 1);
     }
 
-    public void addTextAndRewriteFile(final String text) {
+    public void rewriteLastFile(final String text) {
         rewriteFileWithNewText(text, pullFile());
     }
 
-    private void rewriteFileWithNewText(final String text, final File file) {
+    public void rewriteFileWithNewText(final String text, final File file) {
         file.delete();
 
         try {

@@ -4,10 +4,9 @@ import javafx.util.Pair;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
+import static utilities.Constants.*;
 import static utilities.StringUtilities.stringToList;
 
 public final class DataKeeper {
@@ -72,14 +71,16 @@ public final class DataKeeper {
                 final StringBuilder builder = new StringBuilder();
 
                 while (!builder.append(reader.readLine()).toString().equals("null")) {
-                    String[] strings = builder.toString().split("\t");
+                    final String[] strings = builder.toString().split(SEPARATOR_FOR_FILE);
                     wordDatas.add(new WordData(
 
-                            stringToList(strings[0]),
-                            strings[1],
-                            Integer.parseInt(strings[2]),
-                            stringToList(strings[3]),
-                            stringToList(strings[4])
+                            strings[WORD],
+                            stringToList(strings[TAG_WORD]),
+                            stringToList(strings[DESCRIPTION_TAG_WORD]),
+                            Integer.parseInt(strings[COUNT]),
+                            stringToList(strings[WORD_LEMMA]),
+                            stringToList(strings[TAG_LEMMA]),
+                            stringToList(strings[DESCRIPTION_TAG_LEMMA])
                     ));
                     builder.delete(0, builder.length());
                 }

@@ -2,16 +2,16 @@ package textHandlers;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.MultiTokenTag;
 import edu.stanford.nlp.ling.Tag;
+import edu.stanford.nlp.ling.tokensregex.types.Tags;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.process.Morphology;
 import edu.stanford.nlp.simple.Sentence;
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import edu.stanford.nlp.util.CoreMap;
-import utilities.StringUtilities;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -19,7 +19,7 @@ public class Lemmatizer {
 
     private final StanfordCoreNLP pipeline;
 
-    public Lemmatizer(){
+    public Lemmatizer() {
         final Properties props = new Properties();
         props.put("annotators", "tokenize, ssplit, pos");
 
@@ -49,34 +49,28 @@ public class Lemmatizer {
 
     }
 
-    public static List<String> getTag(final String word){
+    public static List<String> getTag(final String word) {
         return new Sentence(word).posTags();
     }
 
-    public String paintTextWithPosTags(final String text){
-        final Annotation tokenAnnotation = new Annotation(text);
-        pipeline.annotate(tokenAnnotation);
-        final List<CoreMap> sentences = tokenAnnotation.get(CoreAnnotations.SentencesAnnotation.class);
-
+    public String paintTextWithPosTags(final String text) {
         final StringBuilder textBuilder = new StringBuilder();
+        final String[] textInLines = text.split("\n");
+        final MaxentTagger tagger = new MaxentTagger("edu/stanford/nlp/models/pos-tagger/english-left3words/english-left3words-distsim.tagger");
 
+        for (int i = 0; i < textInLines.length; i++) {
+            final Annotation tokenAnnotation = new Annotation(textInLines[i]);
 
-        for(final CoreMap sentence: sentences) {
-            // Iterate over all tokens in a sentence
-            for (final CoreLabel token: sentence.get(CoreAnnotations.TokensAnnotation.class)) {
-                // Retrieve and add the lemma for each word into the list of lemmas
-                final String[] words = sentence.toString().split("");
-                final String[] tags = token.tag().split("");
-                for (int i=0; i<sentences.size(); i++){
-                    textBuilder.append(words[i]).append("(").append(tags[i]).append(") ");
-                }
-                textBuilder.append(sentence.toString());
-                textBuilder.append(token.get(CoreAnnotations.LemmaAnnotation.class));
-                System.out.println(token.tag());
+            pipeline.annotate(tokenAnnotation);
+
+            final List<CoreMap> sentences = tokenAnnotation.get(CoreAnnotations.SentencesAnnotation.class);
+
+            for (final CoreMap sentence : sentences) {
+                textBuilder.append(tagger.tagString(sentence.toString()));
             }
-        }
 
-        System.out.println(textBuilder.toString());
+            textBuilder.append(i == (textInLines.length - 1) ? "":System.lineSeparator());
+        }
 
         return textBuilder.toString();
     }

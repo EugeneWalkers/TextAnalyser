@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static utilities.Constants.SEPARATOR_FOR_FILE;
+import static utilities.Constants.SEPARATOR_FOR_LIST;
+
 public final class StringUtilities {
 
     private StringUtilities() {
@@ -29,7 +32,7 @@ public final class StringUtilities {
     }
 
     public static List<String> stringToList(final String string) {
-        final String[] array = string.split("\\W");
+        final String[] array = string.split(SEPARATOR_FOR_LIST);
         final List<String> list = new ArrayList<>();
         Collections.addAll(list, array);
 
@@ -40,7 +43,7 @@ public final class StringUtilities {
         final StringBuilder builder = new StringBuilder();
 
         for (int i = 0; i < list.size(); i++) {
-            builder.append(list.get(i) + ";");
+            builder.append(list.get(i) + SEPARATOR_FOR_LIST);
         }
 
         return builder.toString();

@@ -66,7 +66,7 @@ public class DictionaryFrame extends JFrame {
             }
         };
 
-        searchFrame = new SearchFrame(){
+        searchFrame = new SearchFrame() {
             @Override
             public void tableChanged(TableModelEvent e) {
                 super.tableChanged(e);
@@ -81,6 +81,7 @@ public class DictionaryFrame extends JFrame {
         setFrame();
         setComponents();
         setMenu();
+
     }
 
     public static DictionaryFrame getInstance() {
@@ -108,7 +109,10 @@ public class DictionaryFrame extends JFrame {
         dictionaryTable.setRowSorter(sorter);
 
         model.addTableModelListener(e -> {
-            if (e.getColumn() == Constants.WORD) {
+            if (
+                    e.getColumn() == Constants.WORD ||
+                    e.getColumn() == Constants.TAG_LEMMA ||
+                    e.getColumn() == Constants.TAG_WORD) {
                 controller.notifyTableChanged(model.getDataVector());
                 updateTable();
             }
@@ -125,7 +129,7 @@ public class DictionaryFrame extends JFrame {
     }
 
     private void setFrame() {
-        setSize(1500, 700);
+        setSize(1820, 980);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -135,12 +139,12 @@ public class DictionaryFrame extends JFrame {
         handler.addActionListener(listener -> {
             if (!originalTextArea.getText().equals("")) {
                 new Thread(() -> {
+                    setAllButtonsEnabled(false);
+
                     bar.setIndeterminate(true);
 
-                    handler.setEnabled(false);
-
                     controller.pushFile(file);
-                    controller.addTextAndRewriteFile(originalTextArea.getText());
+                    controller.rewriteLastFile(originalTextArea.getText());
                     controller.handle();
 
                     model.setDataVector(controller.getDataInVector(), HEADERS);
@@ -149,9 +153,9 @@ public class DictionaryFrame extends JFrame {
 
                     file = null;
 
-                    handler.setEnabled(true);
-
                     bar.setIndeterminate(false);
+
+                    setAllButtonsEnabled(true);
                 }).start();
             }
         });
@@ -179,10 +183,29 @@ public class DictionaryFrame extends JFrame {
         });
     }
 
-    private void setPainterListener(){
-        painter.addActionListener(listener ->{
-            new Thread(() -> controller.paintText(originalTextArea.getText())).start();
-        });
+    private void setPainterListener() {
+        painter.addActionListener(listener -> new Thread(() -> {
+            setAllButtonsEnabled(false);
+            bar.setIndeterminate(true);
+
+            if (file != null) {
+                controller.pushFile(file);
+                controller.rewriteLastFile(originalTextArea.getText());
+            }
+
+            controller.paintText(originalTextArea.getText());
+
+            bar.setIndeterminate(false);
+            setAllButtonsEnabled(true);
+        }).start());
+    }
+
+    private void setAllButtonsEnabled(final boolean b) {
+        adder.setEnabled(b);
+        cleaner.setEnabled(b);
+        handler.setEnabled(b);
+        painter.setEnabled(b);
+        searcher.setEnabled(b);
     }
 
     private void updateTable() {
@@ -215,16 +238,16 @@ public class DictionaryFrame extends JFrame {
         constraints.gridx = 0;
         constraints.gridy = 0;
         constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 1;
         constraints.weighty = 5;
         constraints.gridwidth = 1;
         mainPanel.add(scrollerForOriginalTextArea, constraints);
 
         constraints.gridx = 1;
-        constraints.gridwidth = 1;
-        constraints.weightx = 3;
-        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.gridwidth = 10;
+        constraints.weightx = 10;
+        constraints.anchor = GridBagConstraints.NORTHEAST;
         mainPanel.add(scrollerForResults, constraints);
 
         constraints.gridx = 0;
@@ -240,9 +263,11 @@ public class DictionaryFrame extends JFrame {
 
         constraints.gridx = 1;
         constraints.gridy = 1;
+        constraints.weightx = 5;
         mainPanel.add(rightButtons, constraints);
 
         constraints.insets = new Insets(0, 10, 10, 10);
+        constraints.weightx = 1;
         constraints.gridx = 0;
         constraints.gridy = 2;
         constraints.gridwidth = 2;
@@ -273,7 +298,7 @@ public class DictionaryFrame extends JFrame {
             case JFileChooser.APPROVE_OPTION:
                 file = chooser.getSelectedFile();
                 originalTextArea.setText("");
-                handler.setEnabled(false);
+                setAllButtonsEnabled(false);
                 new Thread(reader).start();
 
                 break;
@@ -299,7 +324,8 @@ public class DictionaryFrame extends JFrame {
                 int r = originalTextArea.getText().length();
                 originalTextArea.select(r - 1, r);
                 originalTextArea.cut();
-                handler.setEnabled(true);
+
+                setAllButtonsEnabled(true);
 
             } catch (IOException e) {
                 e.printStackTrace();

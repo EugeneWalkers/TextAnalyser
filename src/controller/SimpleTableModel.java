@@ -2,8 +2,7 @@ package controller;
 
 import javax.swing.table.DefaultTableModel;
 
-import static utilities.Constants.COUNT;
-import static utilities.Constants.WORD;
+import static utilities.Constants.*;
 
 public class SimpleTableModel extends DefaultTableModel {
 
@@ -11,6 +10,11 @@ public class SimpleTableModel extends DefaultTableModel {
     public boolean isCellEditable(int row, int column) {
         switch (column) {
             case WORD:
+                return true;
+
+            case TAG_WORD:
+                return true;
+            case TAG_LEMMA:
                 return true;
             default:
                 return false;
