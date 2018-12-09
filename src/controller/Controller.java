@@ -54,6 +54,7 @@ public class Controller {
     }
 
     public List<WordData> getData() {
+
         return DataKeeper.readWordDatasFromFile(dictionary);
     }
 
@@ -160,7 +161,6 @@ public class Controller {
     public void repaintText(final String text) {
 
     }
-
     private void rewritePairsToWordData() {
         final List<Pair<String, Integer>> pairs = DataKeeper.readPairsFromFile(temporaryOutput);
         temporaryOutput.delete();
@@ -224,7 +224,7 @@ public class Controller {
 
         if (oldData.size() == newData.size()) {
             final String[] replaces = changeElementInDictionaryAndConcat(oldData, newData);
-
+          
             if (replaces != null) {
                 replaceStringInAllFiles(replaces[0], replaces[1]);
             }
@@ -250,6 +250,7 @@ public class Controller {
 
         for (int j = 0; j < fullCachedToChange.size(); j++) {
             if (fullCachedToChange.get(i).get(WORD).equals(oldWordData.getWord())) {
+
                 final WordData data = new WordData(newWordData);
                 fullCachedToChange.set(i, data.toVector());
                 break;
@@ -331,6 +332,7 @@ public class Controller {
         } else {
             oldData.remove(index);
         }
+
 
         return result;
     }

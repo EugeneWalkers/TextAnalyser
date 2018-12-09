@@ -10,7 +10,6 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import edu.stanford.nlp.util.CoreMap;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +18,9 @@ import java.util.Properties;
 public class Lemmatizer {
 
     private final StanfordCoreNLP pipeline;
+
     private final MaxentTagger tagger;
+
 
     public Lemmatizer() {
         final Properties props = new Properties();
@@ -74,6 +75,7 @@ public class Lemmatizer {
                 final String tokens = sentence.toShorterString("Tokens");
                 final String sent = sentence.toString();
                 System.out.println(sent);
+
                 textBuilder.append(tagger.tagString(sentence.toString()));
             }
 
@@ -98,5 +100,4 @@ public class Lemmatizer {
         final String someResult = builder.toString();
         return null;
     }
-
 }

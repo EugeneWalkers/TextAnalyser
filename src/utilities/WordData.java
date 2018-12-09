@@ -17,6 +17,7 @@ public class WordData implements Comparable<WordData> {
     private List<String> lemmaWord;
     private List<String> lemmaWordTag;
     //private List<String> lemmaTagTranscripts;
+
     private int number;
 
     public WordData(

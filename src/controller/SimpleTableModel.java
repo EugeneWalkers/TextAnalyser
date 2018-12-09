@@ -39,7 +39,6 @@ public class SimpleTableModel extends DefaultTableModel{
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
     }
 
-
     @Override
     public boolean isCellEditable(int row, int column) {
         switch (column) {
@@ -63,7 +62,4 @@ public class SimpleTableModel extends DefaultTableModel{
                 return String.class;
         }
     }
-
-
-
 }
