@@ -7,25 +7,20 @@ import utilities.TagsKeeper;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
+import static utilities.Constants.LINE_SEPARATOR;
 import static utilities.Constants.TAG_SEPARATOR;
 
-public class PaintedTextFrame extends JFrame{
+public class PaintedTextFrame extends JFrame {
     private final JButton ok;
-    private final JButton help;
     private final JTextPane input;
-    private final Controller controller;
     private final Style style;
     private List<String> text;
 
     {
         ok = new JButton("Готово");
-        help = new JButton("Показать подсказку");
         input = new JTextPane();
-        controller = Controller.getInstance();
         style = input.addStyle("Colorful", null);
     }
 
@@ -51,61 +46,47 @@ public class PaintedTextFrame extends JFrame{
         input.setFont(new Font("FreeMono", Font.PLAIN, 20));
         input.setEditable(false);
         input.setDocument(new DefaultStyledDocument());
+        input.setContentType("text/html");
     }
 
     private void addComponents() {
-        final BorderLayout mainBorderLayout = new BorderLayout();
-        final GridBagLayout gridBagLayout = new GridBagLayout();
-        final GridBagConstraints constraints = new GridBagConstraints();
-
-        setLayout(mainBorderLayout);
+        final FlowLayout layout = new FlowLayout();
 
         final JPanel panel = new JPanel();
-        panel.setLayout(gridBagLayout);
+        panel.setLayout(layout);
 
         final JScrollPane jScrollPane = new JScrollPane(input);
 
-        constraints.insets = new Insets(10, 10, 5, 10);
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.NORTH;
-        constraints.weightx = 1;
-        constraints.weighty = 5;
-        constraints.gridwidth = 2;
-        panel.add(jScrollPane, constraints);
+        add(jScrollPane, BorderLayout.CENTER);
 
-        constraints.insets = new Insets(5, 10, 10, 10);
-        constraints.gridy = 1;
-        constraints.weighty = 1;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.SOUTHWEST;
-        panel.add(help, constraints);
+        panel.add(ok);
 
-        constraints.gridx = 1;
-        constraints.anchor = GridBagConstraints.SOUTHEAST;
-        panel.add(ok, constraints);
-
-
-        add(panel, BorderLayout.CENTER);
+        add(panel, BorderLayout.PAGE_END);
     }
 
     private void setListeners() {
         ok.addActionListener(e -> setVisible(false));
-        help.addActionListener(e -> FullTagHelper.getInstance().setVisible(true));
     }
 
     public void draw() {
-        for (final String word : text) {
-            final String[] separatedWord = word.split(TAG_SEPARATOR);
-            appendText(separatedWord[0]);
+        input.setText(null);
 
-            if (separatedWord.length > 1){
-                appendText(TAG_SEPARATOR);
-                appendTag(separatedWord[1]);
+        new Thread(() -> {
+            for (final String word : text) {
+                if (!word.equals(LINE_SEPARATOR)) {
+                    final String[] separatedWord = word.split(TAG_SEPARATOR);
+                    appendText(separatedWord[0]);
+
+                    if (separatedWord.length > 1) {
+                        appendText(TAG_SEPARATOR);
+                        appendTag(separatedWord[1]);
+                    }
+                }
+                else{
+                    appendText(LINE_SEPARATOR);
+                }
             }
-        }
+        }).start();
     }
 
     private void appendText(final String text) {

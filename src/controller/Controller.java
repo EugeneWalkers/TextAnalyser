@@ -116,8 +116,28 @@ public class Controller {
         }
     }
 
-    private File pullFile() {
+    public boolean isFileContained(final File file) {
+        for (int i = 0; i < files.size(); i++) {
+            if (files.get(i).getAbsolutePath().equals(file.getAbsolutePath())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public File pullFile() {
         return files.get(files.size() - 1);
+    }
+
+    public File findFileByName(final String name) {
+        for (int i = 0; i < files.size(); i++) {
+            if (files.get(i).getName().equals(name)) {
+                return files.get(i);
+            }
+        }
+
+        return null;
     }
 
     public void rewriteLastFile(final String text) {

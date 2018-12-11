@@ -33,7 +33,6 @@ public class FullTagHelper extends JFrame {
         headers = new Vector<>();
         headers.add("Тег");
         headers.add("Расшифровка");
-        headers.add("Цвет");
         tags = new Vector<>();
 
         final Map<String, TagData> tags = TagsKeeper.getAllTags();
@@ -43,7 +42,6 @@ public class FullTagHelper extends JFrame {
 
             tempData.add(entry.getKey());
             tempData.add(TagsKeeper.getTagData(entry.getKey()).getDescription());
-            tempData.add("");
 
             this.tags.add(tempData);
         }
@@ -62,13 +60,13 @@ public class FullTagHelper extends JFrame {
                 final JLabel label = (JLabel)super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 final Color bc = TagsKeeper.getTagData(FullTagHelper.this.tags.get(row).get(0)).getColor();
 
-                label.setBackground(bc);
+                label.setForeground(bc);
 
                 return label;
             }
         };
 
-        table.getColumnModel().getColumn(2).setCellRenderer(renderer);
+        table.getColumnModel().getColumn(0).setCellRenderer(renderer);
 
     }
 

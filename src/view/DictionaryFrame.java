@@ -3,6 +3,7 @@ package view;
 import controller.Controller;
 import controller.SimpleTableModel;
 import utilities.Constants;
+import utilities.DataKeeper;
 
 import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
@@ -12,32 +13,36 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.*;
+import java.io.File;
 
 import static utilities.Constants.HEADERS;
 
 public class DictionaryFrame extends JFrame {
 
     private static final String DIR = "docs";
-    private static DictionaryFrame dictionaryFrame = null;
+    private static final String STATUS_NOT_FOUND = "not found";
+    private static final String STATUS_LOADING = "loading";
+    private static final String STATUS_OPENED = "opened";
+    private static final String STATUS_EXIST = "exist";
 
+    private static DictionaryFrame dictionaryFrame = null;
+    private final JLabel info;
     private final SimpleTableModel model;
     private final JTable dictionaryTable;
     private final JFileChooser chooser;
-    private final JTextArea originalTextArea;
-    private final ReaderFromFile reader;
     private final JProgressBar bar;
-    private final GridBagConstraints constraints;
-    private final JPanel mainPanel;
     private final JButton handler;
     private final JButton cleaner;
     private final JButton adder;
     private final JButton searcher;
     private final JButton painter;
+    private final JButton allTags;
     private final DialogInputWord dialogInputWord;
     private final SearchFrame searchFrame;
     private final TagInterpretator tagInterpretator;
     private final PaintedTextFrame paintedTextFrame;
+    private final StringBuilder text;
+    private final JPanel files;
 
     private File file;
     private int selectedRow;
@@ -45,13 +50,13 @@ public class DictionaryFrame extends JFrame {
     private Controller controller;
 
     {
+        files = new JPanel();
+        allTags = new JButton("Посмотреть теги");
+        info = new JLabel();
+        text = new StringBuilder();
         tagInterpretator = new TagInterpretator();
         chooser = new JFileChooser(DIR);
-        reader = new ReaderFromFile();
-        constraints = new GridBagConstraints();
         bar = new JProgressBar();
-        mainPanel = new JPanel();
-        originalTextArea = new JTextArea();
         handler = new JButton("Составить словарь");
         cleaner = new JButton("Удалить словарь");
         adder = new JButton("Добавить слово");
@@ -80,6 +85,8 @@ public class DictionaryFrame extends JFrame {
                 DictionaryFrame.this.updateTable();
             }
         };
+
+        setAllButtonsEnabled(false);
     }
 
     private DictionaryFrame() {
@@ -105,7 +112,10 @@ public class DictionaryFrame extends JFrame {
     }
 
     private void setupComponents() {
-        originalTextArea.setLineWrap(true);
+        info.setOpaque(true);
+        redrawInfo(STATUS_NOT_FOUND);
+
+        files.setLayout(new BoxLayout(files, BoxLayout.Y_AXIS));
 
         model.setColumnIdentifiers(HEADERS);
         dictionaryTable.setModel(model);
@@ -169,7 +179,7 @@ public class DictionaryFrame extends JFrame {
             }
         });
 
-        dictionaryTable.setComponentPopupMenu(popupMenu);
+        //dictionaryTable.setComponentPopupMenu(popupMenu);
 
         model.addTableModelListener(e -> {
             if (
@@ -189,6 +199,7 @@ public class DictionaryFrame extends JFrame {
         setAdderListener();
         setSearcherListener();
         setPainterListener();
+        setAllTagsListener();
     }
 
     private void setFrame() {
@@ -200,19 +211,15 @@ public class DictionaryFrame extends JFrame {
 
     private void setHandlerListener() {
         handler.addActionListener(listener -> {
-            if (!originalTextArea.getText().equals("")) {
+            if (!text.toString().equals("")) {
                 new Thread(() -> {
                     setAllButtonsEnabled(false);
 
                     bar.setIndeterminate(true);
 
-                    controller.pushFile(file);
-                    controller.rewriteLastFile(originalTextArea.getText());
                     controller.handle();
 
                     model.setDataVector(controller.getDataInVector(), HEADERS);
-
-                    originalTextArea.setText("");
 
                     file = null;
 
@@ -246,12 +253,18 @@ public class DictionaryFrame extends JFrame {
         });
     }
 
+    private void setAllTagsListener() {
+        allTags.addActionListener(e -> {
+            FullTagHelper.getInstance().setVisible(true);
+        });
+    }
+
     private void setPainterListener() {
         painter.addActionListener(listener -> new Thread(() -> {
             setAllButtonsEnabled(false);
             bar.setIndeterminate(true);
 
-            paintedTextFrame.setText(controller.getPaintedText(originalTextArea.getText()));
+            paintedTextFrame.setText(controller.getPaintedText(text.toString()));
             paintedTextFrame.draw();
             paintedTextFrame.setVisible(true);
 
@@ -266,6 +279,7 @@ public class DictionaryFrame extends JFrame {
         handler.setEnabled(b);
         painter.setEnabled(b);
         searcher.setEnabled(b);
+        allTags.setEnabled(b);
     }
 
     private void updateTable() {
@@ -274,66 +288,69 @@ public class DictionaryFrame extends JFrame {
     }
 
     private void setComponents() {
-        setLayout(new GridLayout(1, 1));
-        add(mainPanel);
-        mainPanel.setLayout(new GridBagLayout());
 
-        final JScrollPane scrollerForOriginalTextArea = new JScrollPane(originalTextArea);
         final JScrollPane scrollerForResults = new JScrollPane(dictionaryTable);
-        final JPanel leftButtons = new JPanel();
-        final JPanel rightButtons = new JPanel();
+        final JPanel right = new JPanel();
+        final JPanel buttons = new JPanel();
 
-        final GridLayout borderLayout = new GridLayout(1, 0, 5, 5);
+        right.setLayout(new BorderLayout());
+
+        final GridLayout borderLayout = new GridLayout(0, 1, 10, 10);
         borderLayout.setVgap(1);
-        leftButtons.setLayout(borderLayout);
-        leftButtons.add(handler);
-        leftButtons.add(adder);
-        leftButtons.add(searcher);
-        leftButtons.add(painter);
+        buttons.setLayout(borderLayout);
+        buttons.add(handler);
+        buttons.add(adder);
+        //buttons.add(searcher);
+        buttons.add(allTags);
+        buttons.add(painter);
 
-        rightButtons.setLayout(borderLayout);
-        rightButtons.add(cleaner);
+        add(scrollerForResults, BorderLayout.CENTER);
 
-        constraints.insets = new Insets(5, 10, 5, 10);
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 1;
-        constraints.weighty = 5;
-        constraints.gridwidth = 1;
-        mainPanel.add(scrollerForOriginalTextArea, constraints);
+        right.add(buttons, BorderLayout.NORTH);
 
-        constraints.gridx = 1;
-        constraints.gridwidth = 10;
-        constraints.weightx = 10;
-        constraints.anchor = GridBagConstraints.NORTHEAST;
-        mainPanel.add(scrollerForResults, constraints);
+        final JScrollPane paneWithFiles = new JScrollPane(files);
+        right.add(paneWithFiles, BorderLayout.CENTER);
 
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.insets = new Insets(5, 10, 0, 5);
-        constraints.weightx = 1;
-        constraints.weighty = 1;
-        constraints.gridwidth = 1;
-        constraints.gridheight = 1;
-        constraints.anchor = GridBagConstraints.CENTER;
-        constraints.fill = GridBagConstraints.NONE;
-        mainPanel.add(leftButtons, constraints);
+        right.add(cleaner, BorderLayout.SOUTH);
 
-        constraints.gridx = 1;
-        constraints.gridy = 1;
-        constraints.weightx = 5;
-        mainPanel.add(rightButtons, constraints);
+        add(bar, BorderLayout.PAGE_END);
 
-        constraints.insets = new Insets(0, 10, 10, 10);
-        constraints.weightx = 1;
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.SOUTH;
-        mainPanel.add(bar, constraints);
+        add(info, BorderLayout.PAGE_START);
+
+        add(right, BorderLayout.EAST);
+    }
+
+    private void redrawInfo(final String status) {
+        switch (status) {
+            case STATUS_LOADING:
+                info.setText("Открывается файл " + file.getName());
+                info.setBackground(Color.YELLOW);
+                break;
+
+            case STATUS_OPENED:
+                info.setText("Открыт файл " + file.getName());
+                info.setBackground(Color.GREEN);
+                break;
+
+            case STATUS_EXIST:
+//                info.setText("Файл " + file.getName() + " уже открыт");
+//                info.setBackground(Color.YELLOW);
+//                file = controller.pullFile();
+//                try {
+//                    Thread.sleep(5000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                redrawInfo(STATUS_OPENED);
+                break;
+
+            default:
+            case STATUS_NOT_FOUND:
+                info.setText("Файл не открыт");
+                info.setBackground(Color.RED);
+                break;
+
+        }
     }
 
     private void setMenu() {
@@ -352,16 +369,54 @@ public class DictionaryFrame extends JFrame {
         exit.addActionListener(listener -> System.exit(0));
     }
 
+    private void appendToFiles(final String fileName){
+        final JLabel newLabel = new JLabel(fileName);
+        files.add(newLabel);
+
+        newLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(final MouseEvent e) {
+                super.mousePressed(e);
+                System.out.println("Смена файла");
+                file = controller.findFileByName(newLabel.getText());
+                selectFile();
+            }
+        });
+
+        redrawInfo(STATUS_OPENED);
+    }
+
+    private void selectFile(){
+        text.append(DataKeeper.readTextFromFile(file));
+        setAllButtonsEnabled(true);
+        redrawInfo(STATUS_OPENED);
+    }
+
+    private void addFile(){
+        if (!controller.isFileContained(file)){
+            controller.pushFile(file);
+            selectFile();
+            appendToFiles(file.getName());
+        }
+        else{
+            redrawInfo(STATUS_EXIST);
+        }
+    }
+
     private void showFileChooser() {
         int res = chooser.showDialog(null, "Открыть файл");
         switch (res) {
             case JFileChooser.APPROVE_OPTION:
                 file = chooser.getSelectedFile();
-                originalTextArea.setText("");
-                setAllButtonsEnabled(false);
-                new Thread(reader).start();
 
+                setAllButtonsEnabled(false);
+                text.setLength(0);
+
+                redrawInfo(STATUS_LOADING);
+
+                addFile();
                 break;
+
             case JFileChooser.CANCEL_OPTION:
 
                 break;
@@ -369,27 +424,4 @@ public class DictionaryFrame extends JFrame {
         }
     }
 
-    private class ReaderFromFile implements Runnable {
-
-        @Override
-        public void run() {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
-
-                StringBuilder builder = new StringBuilder();
-                while (!builder.append(reader.readLine()).toString().equals("null")) {
-                    originalTextArea.append(builder.toString() + "\n");
-                    builder.delete(0, builder.length());
-                }
-
-                int r = originalTextArea.getText().length();
-                originalTextArea.select(r - 1, r);
-                originalTextArea.cut();
-
-                setAllButtonsEnabled(true);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

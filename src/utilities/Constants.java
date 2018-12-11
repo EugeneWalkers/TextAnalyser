@@ -18,6 +18,8 @@ public class Constants {
 
     public final static String TAG_SEPARATOR = "_";
 
+    public final static String LINE_SEPARATOR = "<br>";
+
     public final static int AMOUNT = 5;
 
     static {
