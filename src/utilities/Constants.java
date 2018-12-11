@@ -16,6 +16,8 @@ public class Constants {
     public final static String SEPARATOR_FOR_FILE = ";";
     public final static String SEPARATOR_FOR_LIST = ":";
 
+    public final static String TAG_SEPARATOR = "_";
+
     public final static int AMOUNT = 5;
 
     static {

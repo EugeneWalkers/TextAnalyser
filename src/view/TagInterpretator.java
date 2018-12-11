@@ -49,7 +49,7 @@ public class TagInterpretator extends JFrame {
         for (int i=0; i<tags.size(); i++){
             final Vector<String> row = new Vector<>();
             row.add(tags.get(i));
-            row.add(TagsKeeper.getDescription(tags.get(i)));
+            row.add(TagsKeeper.getTagData(tags.get(i)).getDescription());
 
             data.add(row);
         }

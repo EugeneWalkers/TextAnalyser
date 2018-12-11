@@ -1,42 +1,62 @@
 package view;
 
 import controller.Controller;
+import utilities.TagData;
+import utilities.TagsKeeper;
 
 import javax.swing.*;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
-public class PaintedTextFrame extends JFrame implements ActionListener {
+import static utilities.Constants.TAG_SEPARATOR;
+
+public class PaintedTextFrame extends JFrame{
     private final JButton ok;
-    private final JTextArea input;
+    private final JButton help;
+    private final JTextPane input;
     private final Controller controller;
+    private final Style style;
+    private List<String> text;
 
     {
         ok = new JButton("Готово");
-        input = new JTextArea();
+        help = new JButton("Показать подсказку");
+        input = new JTextPane();
         controller = Controller.getInstance();
+        style = input.addStyle("Colorful", null);
     }
 
     PaintedTextFrame() {
-        super("Добавить слово");
-        setSize(300, 150);
+        super("Раскраска");
+        setSize(600, 800);
         setLocationRelativeTo(null);
         addComponents();
         setComponents();
         setListeners();
     }
 
+    public List<String> getText() {
+        return text;
+    }
+
+    public void setText(List<String> text) {
+        this.text = text;
+    }
+
     private void setComponents() {
-        input.setLineWrap(true);
+        input.setEditable(true);
+        input.setFont(new Font("FreeMono", Font.PLAIN, 20));
+        input.setEditable(false);
+        input.setDocument(new DefaultStyledDocument());
     }
 
     private void addComponents() {
         final BorderLayout mainBorderLayout = new BorderLayout();
         final GridBagLayout gridBagLayout = new GridBagLayout();
         final GridBagConstraints constraints = new GridBagConstraints();
-
-        mainBorderLayout.setVgap(4);
 
         setLayout(mainBorderLayout);
 
@@ -51,32 +71,63 @@ public class PaintedTextFrame extends JFrame implements ActionListener {
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.weightx = 1;
-        constraints.weighty = 3;
-        constraints.gridwidth = 1;
+        constraints.weighty = 5;
+        constraints.gridwidth = 2;
         panel.add(jScrollPane, constraints);
 
         constraints.insets = new Insets(5, 10, 10, 10);
         constraints.gridy = 1;
         constraints.weighty = 1;
+        constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.SOUTH;
+        constraints.anchor = GridBagConstraints.SOUTHWEST;
+        panel.add(help, constraints);
+
+        constraints.gridx = 1;
+        constraints.anchor = GridBagConstraints.SOUTHEAST;
         panel.add(ok, constraints);
+
 
         add(panel, BorderLayout.CENTER);
     }
 
     private void setListeners() {
-        ok.addActionListener(this);
+        ok.addActionListener(e -> setVisible(false));
+        help.addActionListener(e -> FullTagHelper.getInstance().setVisible(true));
     }
 
-    public String getString() {
-        final StringBuilder word = new StringBuilder(input.getText().toLowerCase().replaceAll("[\\W,\n]", ""));
-        input.setText(null);
-        return word.toString();
+    public void draw() {
+        for (final String word : text) {
+            final String[] separatedWord = word.split(TAG_SEPARATOR);
+            appendText(separatedWord[0]);
+
+            if (separatedWord.length > 1){
+                appendText(TAG_SEPARATOR);
+                appendTag(separatedWord[1]);
+            }
+        }
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
+    private void appendText(final String text) {
+        final StyledDocument document = input.getStyledDocument();
+        StyleConstants.setForeground(style, Color.BLACK);
 
+        try {
+            document.insertString(document.getLength(), text, style);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void appendTag(final String tag) {
+        final StyledDocument document = input.getStyledDocument();
+        final TagData data = TagsKeeper.getTagData(tag.trim());
+        StyleConstants.setForeground(style, data.getColor());
+
+        try {
+            document.insertString(document.getLength(), tag, style);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
     }
 }

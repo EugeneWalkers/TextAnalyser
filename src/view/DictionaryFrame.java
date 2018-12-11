@@ -37,6 +37,7 @@ public class DictionaryFrame extends JFrame {
     private final DialogInputWord dialogInputWord;
     private final SearchFrame searchFrame;
     private final TagInterpretator tagInterpretator;
+    private final PaintedTextFrame paintedTextFrame;
 
     private File file;
     private int selectedRow;
@@ -59,6 +60,7 @@ public class DictionaryFrame extends JFrame {
         controller = Controller.getInstance();
         dictionaryTable = new JTable();
         model = new SimpleTableModel();
+        paintedTextFrame = new PaintedTextFrame();
 
         dialogInputWord = new DialogInputWord() {
             @Override
@@ -249,11 +251,9 @@ public class DictionaryFrame extends JFrame {
             setAllButtonsEnabled(false);
             bar.setIndeterminate(true);
 
-            if (file != null) {
-                controller.rewriteLastFile(originalTextArea.getText());
-            }
-
-            controller.paintText(originalTextArea.getText());
+            paintedTextFrame.setText(controller.getPaintedText(originalTextArea.getText()));
+            paintedTextFrame.draw();
+            paintedTextFrame.setVisible(true);
 
             bar.setIndeterminate(false);
             setAllButtonsEnabled(true);

@@ -1,10 +1,6 @@
 package textHandlers;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.ling.MultiTokenTag;
-import edu.stanford.nlp.ling.Tag;
-import edu.stanford.nlp.ling.tokensregex.types.Tags;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
@@ -51,16 +47,15 @@ public class Lemmatizer {
 //                .get(0).get(CoreAnnotations.TokensAnnotation.class)
 //                .get(0).get(CoreAnnotations.LemmaAnnotation.class);
         return new Sentence(word).lemmas();
-
     }
 
     public static List<String> getTag(final String word) {
         return new Sentence(word).posTags();
     }
 
-    public String paintTextWithPosTags(final String text) {
-        final StringBuilder textBuilder = new StringBuilder();
+    public List<String> paintTextWithPosTags(final String text) {
         final String[] textInLines = text.split("\n");
+        final List<String> result = new ArrayList<>();
 
         for (int i = 0; i < textInLines.length; i++) {
             final Annotation tokenAnnotation = new Annotation(textInLines[i]);
@@ -70,33 +65,55 @@ public class Lemmatizer {
             final List<CoreMap> sentences = tokenAnnotation.get(CoreAnnotations.SentencesAnnotation.class);
 
             for (final CoreMap sentence : sentences) {
-                System.out.println(sentence.keySet());
                 final String tokens = sentence.toShorterString("Tokens");
-                final String sent = sentence.toString();
-                System.out.println(sent);
-                textBuilder.append(tagger.tagString(sentence.toString()));
+
+                final List<String> words = getWordsByTokens(tokens);
+
+                for (int k=0; k<words.size(); k++){
+                    words.set(k, tagger.tagString(words.get(k)));
+                }
+                result.addAll(words);
             }
 
-            textBuilder.append(i == (textInLines.length - 1) ? "":System.lineSeparator());
+            result.add(i == (textInLines.length - 1) ? "" : "\n");
         }
 
-        return textBuilder.toString();
+        return result;
     }
 
-    private boolean isPaintNeeded(final String word){
+    private boolean isPaintNeeded(final String word) {
         return !word.contains("_");
     }
 
-    private List<String> getWordsByTokens(final String tokens){ // "[Tokens=[Hello-1, ,-2, world-3, !-4]]" -> {Hello, ,, world, !] (as List)
+    private List<String> getWordsByTokens(final String tokens) { // "[Tokens=[Hello-1, ,-2, world-3, !-4]]" -> {Hello, ,, world, !] (as List)
         final StringBuilder builder = new StringBuilder(tokens);
         builder.deleteCharAt(0);
         builder.deleteCharAt(builder.length() - 1);
-        int first = builder.indexOf("=");
-        builder.delete(0, first);
+        final int first = builder.indexOf("=");
+        builder.delete(0, first + 1);
         builder.deleteCharAt(0);
         builder.deleteCharAt(builder.length() - 1);
         final String someResult = builder.toString();
-        return null;
+        final String[] arrayWithNumbers = someResult.split(", ");
+        final String[] result = new String[arrayWithNumbers.length];
+
+        for (int i = 0; i < arrayWithNumbers.length; i++) {
+            final String[] temp = arrayWithNumbers[i].split("-");
+            result[i] = temp[0];
+        }
+
+        return addSpaces(Arrays.asList(result));
+    }
+
+    private List<String> addSpaces(final List<String> text){
+        final List<String> result = new ArrayList<>();
+
+        for (final String word: text){
+            result.add(word);
+            result.add(" ");
+        }
+
+        return result;
     }
 
 }

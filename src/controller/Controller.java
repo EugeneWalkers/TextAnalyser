@@ -153,8 +153,8 @@ public class Controller {
         temporaryOutput.delete();
     }
 
-    public void paintText(final String text) {
-        DataKeeper.writeTextToFile(lemmatizer.paintTextWithPosTags(text), new File("painted.txt"/*pullFile().getName().split("\\.")[0] + " painted.txt")*/));
+    public List<String> getPaintedText(final String text) {
+        return lemmatizer.paintTextWithPosTags(text);
     }
 
     public void repaintText(final String text) {

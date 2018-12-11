@@ -173,11 +173,11 @@ public class WordData implements Comparable<WordData> {
             }
 
 //            for (final String tag : wordTag) {
-//                tagTranscripts.add(TagsKeeper.getDescription(tag));
+//                tagTranscripts.add(TagsKeeper.getTagData(tag));
 //            }
 //
 //            for (final String lemmaTag : lemmaWordTag) {
-//                lemmaTagTranscripts.add(TagsKeeper.getDescription(lemmaTag));
+//                lemmaTagTranscripts.add(TagsKeeper.getTagData(lemmaTag));
 //            }
 
             return new WordData(word, wordTag, /*tagTranscripts,*/ number, lemmaWord, lemmaWordTag/*, lemmaTagTranscripts*/);
@@ -195,11 +195,11 @@ public class WordData implements Comparable<WordData> {
             }
 
             for (final String tag : wordTag) {
-                tagTranscripts.add(TagsKeeper.getDescription(tag));
+                tagTranscripts.add(TagsKeeper.getTagData(tag).getDescription());
             }
 
             for (final String lemmaTag : lemmaWordTag) {
-                lemmaTagTranscripts.add(TagsKeeper.getDescription(lemmaTag));
+                lemmaTagTranscripts.add(TagsKeeper.getTagData(lemmaTag).getDescription());
             }
 
             return new WordData(word, wordTag, /*tagTranscripts,*/ lemmaWord, lemmaWordTag/*, lemmaTagTranscripts*/);
