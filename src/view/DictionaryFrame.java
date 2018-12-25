@@ -37,6 +37,7 @@ public class DictionaryFrame extends JFrame {
     private final JButton searcher;
     private final JButton painter;
     private final JButton allTags;
+    private final JButton statistics;
     private final DialogInputWord dialogInputWord;
     private final SearchFrame searchFrame;
     private final TagInterpretator tagInterpretator;
@@ -62,6 +63,7 @@ public class DictionaryFrame extends JFrame {
         adder = new JButton("Добавить слово");
         searcher = new JButton("Найти слово в словаре");
         painter = new JButton("Раскрасить текст");
+        statistics = new JButton("Статистика");
         controller = Controller.getInstance();
         dictionaryTable = new JTable();
         model = new SimpleTableModel();
@@ -87,6 +89,7 @@ public class DictionaryFrame extends JFrame {
         };
 
         setAllButtonsEnabled(false);
+        cleaner.setEnabled(true);
     }
 
     private DictionaryFrame() {
@@ -280,6 +283,7 @@ public class DictionaryFrame extends JFrame {
         painter.setEnabled(b);
         searcher.setEnabled(b);
         allTags.setEnabled(b);
+        statistics.setEnabled(b);
     }
 
     private void updateTable() {
@@ -303,6 +307,7 @@ public class DictionaryFrame extends JFrame {
         //buttons.add(searcher);
         buttons.add(allTags);
         buttons.add(painter);
+        buttons.add(statistics);
 
         add(scrollerForResults, BorderLayout.CENTER);
 
