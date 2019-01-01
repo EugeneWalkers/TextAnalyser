@@ -17,6 +17,8 @@ import java.io.File;
 
 import static utilities.Constants.HEADERS;
 
+import static utilities.StringUtilities.tagListToStringListByName;
+
 public class DictionaryFrame extends JFrame {
 
     private static final String DIR = "docs";
@@ -37,13 +39,14 @@ public class DictionaryFrame extends JFrame {
     private final JButton searcher;
     private final JButton painter;
     private final JButton allTags;
-    private final JButton statistics;
     private final DialogInputWord dialogInputWord;
     private final SearchFrame searchFrame;
     private final TagInterpretator tagInterpretator;
     private final PaintedTextFrame paintedTextFrame;
     private final StringBuilder text;
     private final JPanel files;
+    private final JButton stat;
+    private final StatisticsFrame stats;
 
     private File file;
     private int selectedRow;
@@ -58,12 +61,12 @@ public class DictionaryFrame extends JFrame {
         tagInterpretator = new TagInterpretator();
         chooser = new JFileChooser(DIR);
         bar = new JProgressBar();
+        stat = new JButton("Статистика");
         handler = new JButton("Составить словарь");
         cleaner = new JButton("Удалить словарь");
         adder = new JButton("Добавить слово");
         searcher = new JButton("Найти слово в словаре");
         painter = new JButton("Раскрасить текст");
-        statistics = new JButton("Статистика");
         controller = Controller.getInstance();
         dictionaryTable = new JTable();
         model = new SimpleTableModel();
@@ -88,8 +91,11 @@ public class DictionaryFrame extends JFrame {
             }
         };
 
+        stats = new StatisticsFrame();
+
         setAllButtonsEnabled(false);
         cleaner.setEnabled(true);
+        stats.setEnabled(true);
     }
 
     private DictionaryFrame() {
@@ -119,6 +125,11 @@ public class DictionaryFrame extends JFrame {
         redrawInfo(STATUS_NOT_FOUND);
 
         files.setLayout(new BoxLayout(files, BoxLayout.Y_AXIS));
+        stat.addActionListener(e ->{
+            stats.recalculate();
+            stats.setVisible(true);
+        });
+
 
         model.setColumnIdentifiers(HEADERS);
         dictionaryTable.setModel(model);
@@ -144,7 +155,7 @@ public class DictionaryFrame extends JFrame {
         final JMenuItem lemmaWordTagDescription = new JMenuItem("Описание тега начальной формы слова");
 
         wordTagDescription.addActionListener(e -> {
-            tagInterpretator.setData(controller.getData().get(selectedRow).getWordTag());
+            tagInterpretator.setData(tagListToStringListByName(controller.getData().get(selectedRow).getWordTag()));
             tagInterpretator.recalculate();
             tagInterpretator.setVisible(true);
         });
@@ -215,10 +226,10 @@ public class DictionaryFrame extends JFrame {
     private void setHandlerListener() {
         handler.addActionListener(listener -> {
             if (!text.toString().equals("")) {
+                bar.setIndeterminate(true);
+
                 new Thread(() -> {
                     setAllButtonsEnabled(false);
-
-                    bar.setIndeterminate(true);
 
                     controller.handle();
 
@@ -263,17 +274,20 @@ public class DictionaryFrame extends JFrame {
     }
 
     private void setPainterListener() {
-        painter.addActionListener(listener -> new Thread(() -> {
-            setAllButtonsEnabled(false);
+        painter.addActionListener(listener -> {
             bar.setIndeterminate(true);
 
-            paintedTextFrame.setText(controller.getPaintedText(text.toString()));
-            paintedTextFrame.draw();
-            paintedTextFrame.setVisible(true);
+            new Thread(() -> {
+                setAllButtonsEnabled(false);
 
-            bar.setIndeterminate(false);
-            setAllButtonsEnabled(true);
-        }).start());
+                paintedTextFrame.setText(controller.getPaintedText(text.toString()));
+                paintedTextFrame.draw();
+                paintedTextFrame.setVisible(true);
+
+                bar.setIndeterminate(false);
+                setAllButtonsEnabled(true);
+            }).start();
+        });
     }
 
     private void setAllButtonsEnabled(final boolean b) {
@@ -282,14 +296,15 @@ public class DictionaryFrame extends JFrame {
         handler.setEnabled(b);
         painter.setEnabled(b);
         searcher.setEnabled(b);
-        allTags.setEnabled(b);
-        statistics.setEnabled(b);
+//        allTags.setEnabled(b);
+        stats.setEnabled(b);
     }
 
     private void updateTable() {
         model.setDataVector(controller.getDataInVector(), HEADERS);
         model.fireTableDataChanged();
     }
+
 
     private void setComponents() {
 
@@ -307,7 +322,7 @@ public class DictionaryFrame extends JFrame {
         //buttons.add(searcher);
         buttons.add(allTags);
         buttons.add(painter);
-        buttons.add(statistics);
+        buttons.add(stat);
 
         add(scrollerForResults, BorderLayout.CENTER);
 
@@ -392,6 +407,7 @@ public class DictionaryFrame extends JFrame {
     }
 
     private void selectFile(){
+        text.setLength(0);
         text.append(DataKeeper.readTextFromFile(file));
         setAllButtonsEnabled(true);
         redrawInfo(STATUS_OPENED);

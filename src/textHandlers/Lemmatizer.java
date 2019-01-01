@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static utilities.Constants.LINE_SEPARATOR;
-
 public class Lemmatizer {
 
     private final StanfordCoreNLP pipeline;
@@ -56,7 +54,7 @@ public class Lemmatizer {
     }
 
     public List<String> paintTextWithPosTags(final String text) {
-        final String[] textInLines = text.split(System.lineSeparator());
+        final String[] textInLines = text.split("\n");
         final List<String> result = new ArrayList<>();
 
         for (int i = 0; i < textInLines.length; i++) {
@@ -77,7 +75,7 @@ public class Lemmatizer {
                 result.addAll(words);
             }
 
-            result.add(i == (textInLines.length - 1) ? "" : LINE_SEPARATOR);
+            result.add(i == (textInLines.length - 1) ? "" : "\n");
         }
 
         return result;

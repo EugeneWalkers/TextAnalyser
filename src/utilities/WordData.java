@@ -9,76 +9,54 @@ import java.util.Vector;
 import static utilities.Constants.AMOUNT;
 import static utilities.Constants.SEPARATOR_FOR_FILE;
 import static utilities.StringUtilities.listToString;
+import static utilities.StringUtilities.tagListToString;
+import static utilities.StringUtilities.tagListToStringWithoutNumb;
 
 public class WordData implements Comparable<WordData> {
     private String word;
-    private List<String> wordTag;
-    //private List<String> tagTranscripts;
+    private List<TagCountData> wordTag;
     private List<String> lemmaWord;
     private List<String> lemmaWordTag;
-    //private List<String> lemmaTagTranscripts;
     private int number;
 
     public WordData(
             final String word,
-            final List<String> wordTag,
-            //final List<String> tagTranscripts,
+            final List<TagCountData> wordTag,
             final List<String> lemmaWord,
             final List<String> lemmaWordTag
-            //final List<String> lemmaTagTranscripts
     ) {
         this.word = word;
         this.wordTag = wordTag;
-        //this.tagTranscripts = tagTranscripts;
         this.lemmaWord = lemmaWord;
         this.lemmaWordTag = lemmaWordTag;
-        //this.lemmaTagTranscripts = lemmaTagTranscripts;
         number = 0;
     }
 
     public WordData(
             final String word,
-            final List<String> wordTag,
-            //final List<String> tagTranscripts,
+            final List<TagCountData> wordTag,
             final int number,
             final List<String> lemmaWord,
             final List<String> lemmaWordTag
-            //final List<String> lemmaTagTranscripts
     ) {
-        this(word, wordTag, /*tagTranscripts,*/ lemmaWord, lemmaWordTag/*, lemmaTagTranscripts*/);
+        this(word, wordTag, lemmaWord, lemmaWordTag);
         this.number = number;
     }
 
     public WordData(final Vector dataInVector) {
         this.word = (String) dataInVector.get(Constants.WORD);
-        this.wordTag = (List<String>) dataInVector.get(Constants.TAG_WORD);
+        this.wordTag = (List<TagCountData>) dataInVector.get(Constants.TAG_WORD);
         this.lemmaWord = (List<String>) dataInVector.get(Constants.WORD_LEMMA);
         this.lemmaWordTag = (List<String>) dataInVector.get(Constants.TAG_LEMMA);
         this.number = (int) dataInVector.get(Constants.COUNT);
     }
 
-    public List<String> getWordTag() {
+    public List<TagCountData> getWordTag() {
         return wordTag;
     }
 
-    public void setWordTag(List<String> wordTag) {
+    public void setWordTag(List<TagCountData> wordTag) {
         this.wordTag = wordTag;
-    }
-
-//    public List<String> getTagTranscripts() {
-//        return tagTranscripts;
-//    }
-
-//    public void setTagTranscripts(List<String> tagTranscripts) {
-//        this.tagTranscripts = tagTranscripts;
-//    }
-
-    public List<String> getLemmaWord() {
-        return lemmaWord;
-    }
-
-    public void setLemmaWord(List<String> lemmaWord) {
-        this.lemmaWord = lemmaWord;
     }
 
     public List<String> getLemmaWordTag() {
@@ -88,14 +66,6 @@ public class WordData implements Comparable<WordData> {
     public void setLemmaWordTag(List<String> lemmaWordTag) {
         this.lemmaWordTag = lemmaWordTag;
     }
-
-//    public List<String> getLemmaTagTranscripts() {
-//        return lemmaTagTranscripts;
-//    }
-
-//    public void setLemmaTagTranscripts(List<String> lemmaTagTranscripts) {
-//        this.lemmaTagTranscripts = lemmaTagTranscripts;
-//    }
 
     public String getWord() {
         return word;
@@ -117,12 +87,10 @@ public class WordData implements Comparable<WordData> {
     public String toString() {
         return
                 word + SEPARATOR_FOR_FILE +
-                        listToString(wordTag) + SEPARATOR_FOR_FILE +
-//                        listToString(tagTranscripts) + SEPARATOR_FOR_FILE +
+                        tagListToString(wordTag) + SEPARATOR_FOR_FILE +
                         number + SEPARATOR_FOR_FILE +
                         listToString(lemmaWord) + SEPARATOR_FOR_FILE +
                         listToString(lemmaWordTag) + SEPARATOR_FOR_FILE
-//                        listToString(lemmaTagTranscripts)
                 ;
     }
 
@@ -149,12 +117,22 @@ public class WordData implements Comparable<WordData> {
         final Vector result = new Vector(AMOUNT);
 
         result.add(Constants.WORD, word);
-        result.add(Constants.TAG_WORD, listToString(wordTag));
-//        result.add(Constants.DESCRIPTION_TAG_WORD, listToString(tagTranscripts));
+        result.add(Constants.TAG_WORD, tagListToString(wordTag));
         result.add(Constants.COUNT, number);
         result.add(Constants.WORD_LEMMA, listToString(lemmaWord));
         result.add(Constants.TAG_LEMMA, listToString(lemmaWordTag));
-//        result.add(Constants.DESCRIPTION_TAG_LEMMA, listToString(lemmaTagTranscripts));
+
+        return result;
+    }
+
+    public Vector toVectorWithoutTagNumb() {
+        final Vector result = new Vector(AMOUNT);
+
+        result.add(Constants.WORD, word);
+        result.add(Constants.TAG_WORD, tagListToStringWithoutNumb(wordTag));
+        result.add(Constants.COUNT, number);
+        result.add(Constants.WORD_LEMMA, listToString(lemmaWord));
+        result.add(Constants.TAG_LEMMA, listToString(lemmaWordTag));
 
         return result;
     }
@@ -162,47 +140,40 @@ public class WordData implements Comparable<WordData> {
     public static class Builder {
 
         public static WordData buildWord(final String word, final int number) {
-            final List<String> wordTag = Lemmatizer.getTag(word);
+            final List<String> wordTagString = Lemmatizer.getTag(word);
+
+            final List<TagCountData> wordTag = new ArrayList<>();
             final List<String> lemmaWord = Lemmatizer.lemmatize(word);
             final List<String> lemmaWordTag = new ArrayList<>();
-//            final List<String> tagTranscripts = new ArrayList<>();
-//            final List<String> lemmaTagTranscripts = new ArrayList<>();
 
             for (final String original : lemmaWord) {
                 lemmaWordTag.addAll(Lemmatizer.getTag(original));
             }
 
-//            for (final String tag : wordTag) {
-//                tagTranscripts.add(TagsKeeper.getTagData(tag));
-//            }
-//
-//            for (final String lemmaTag : lemmaWordTag) {
-//                lemmaTagTranscripts.add(TagsKeeper.getTagData(lemmaTag));
-//            }
+            for (final String tag: wordTagString){
+                wordTag.add(new TagCountData(tag, number/wordTagString.size()));
+            }
 
-            return new WordData(word, wordTag, /*tagTranscripts,*/ number, lemmaWord, lemmaWordTag/*, lemmaTagTranscripts*/);
+            return new WordData(word, wordTag, number, lemmaWord, lemmaWordTag);
         }
 
         public static WordData buildEmptyWord(final String word) {
-            final List<String> wordTag = Lemmatizer.getTag(word);
+            final List<String> wordTagString = Lemmatizer.getTag(word);
+
+            final List<TagCountData> wordTag = new ArrayList<>();
             final List<String> lemmaWord = Lemmatizer.lemmatize(word);
             final List<String> lemmaWordTag = new ArrayList<>();
-            final List<String> tagTranscripts = new ArrayList<>();
-            final List<String> lemmaTagTranscripts = new ArrayList<>();
 
             for (final String original : lemmaWord) {
                 lemmaWordTag.addAll(Lemmatizer.getTag(original));
             }
 
-            for (final String tag : wordTag) {
-                tagTranscripts.add(TagsKeeper.getTagData(tag).getDescription());
+            for (final String tag: wordTagString){
+                wordTag.add(new TagCountData(tag));
             }
 
-            for (final String lemmaTag : lemmaWordTag) {
-                lemmaTagTranscripts.add(TagsKeeper.getTagData(lemmaTag).getDescription());
-            }
 
-            return new WordData(word, wordTag, /*tagTranscripts,*/ lemmaWord, lemmaWordTag/*, lemmaTagTranscripts*/);
+            return new WordData(word, wordTag, lemmaWord, lemmaWordTag);
         }
     }
 
