@@ -30,6 +30,7 @@ class SearchFrame extends JFrame implements TableModelListener {
     }
 
     public SearchFrame() {
+        super("Поиск");
         init();
         setComponents();
         setListeners();

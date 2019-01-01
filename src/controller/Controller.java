@@ -5,6 +5,7 @@ import textHandlers.Lemmatizer;
 import textHandlers.MapReduce;
 import utilities.DataKeeper;
 import utilities.StringUtilities;
+import utilities.TagCountData;
 import utilities.WordData;
 
 import java.io.File;
@@ -15,7 +16,7 @@ import static textHandlers.MapReduce.MAP;
 import static textHandlers.MapReduce.REDUCE;
 import static utilities.CollectionUtilities.areCollectionsEqual;
 import static utilities.Constants.*;
-import static utilities.StringUtilities.stringToList;
+import static utilities.StringUtilities.*;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class Controller {
@@ -62,7 +63,7 @@ public class Controller {
         final Vector<Vector> dataInVector = new Vector<>();
 
         for (final WordData aData : data) {
-            dataInVector.add(aData.toVector());
+            dataInVector.add(aData.toVectorWithoutTagNumb());
         }
 
         return dataInVector;
@@ -162,23 +163,19 @@ public class Controller {
         mapReduce.runCommand(REDUCE, outSort, temporaryOutput);
         rewritePairsToWordData();
         mergeFiles();
-        sortPairs();
+        sortWordData();
         cleanFiles();
     }
 
     public void addWord(final String word) {
         DataKeeper.writeTextToFile(WordData.Builder.buildEmptyWord(word).toString(), temporaryOutput);
         mergeFiles();
-        sortPairs();
+        sortWordData();
         temporaryOutput.delete();
     }
 
     public List<String> getPaintedText(final String text) {
         return lemmatizer.paintTextWithPosTags(text);
-    }
-
-    public void repaintText(final String text) {
-
     }
 
     private void rewritePairsToWordData() {
@@ -233,7 +230,7 @@ public class Controller {
         DataKeeper.writeWordDatasToFile(oldPairs, dictionary);
     }
 
-    private void sortPairs() {
+    private void sortWordData() {
         final List<WordData> wordDatas = DataKeeper.readWordDatasFromFile(dictionary);
         Collections.sort(wordDatas);
         DataKeeper.writeWordDatasToFile(wordDatas, dictionary);
@@ -254,7 +251,7 @@ public class Controller {
     public void notifyTableChanged(final Vector<Vector> newData, final String word) {
         final List<WordData> oldData = getDataByWord(word);
 
-        int i = -1;
+        int i;
 
         for (i = 0; i < oldData.size(); i++) {
             if (!newData.get(i).get(WORD).equals(oldData.get(i).getWord())) {
@@ -298,13 +295,63 @@ public class Controller {
         final int type = changed.getValue();
         String[] result = null;
 
+        swtch:
         switch (type) {
             case WORD:
                 result = changeWord(oldData, newData, index);
                 break;
 
             case TAG_WORD:
-                oldData.get(index).setWordTag(stringToList((String) newData.get(index).get(TAG_WORD)));
+                final String newTag = (String) newData.get(index).get(TAG_WORD);
+                final List<String> newTagList = stringToList(newTag);
+                final List<String> oldTagList = tagListToStringListByName(oldData.get(index).getWordTag());
+
+
+                //ver1
+//                int n = Math.min(newTagList.size(), oldTagList.size());
+//
+//                for (int i=0; i<n; i++){
+//                    oldData.get(index).getWordTag().get(i).setName(newTagList.get(i));
+//                }
+//
+//                if (oldTagList.size() < newTagList.size()){
+//                    for (int i=oldTagList.size(); i<newTagList.size(); i++){
+//                        oldData.get(index).getWordTag().add(new TagCountData(newTagList.get(i)));
+//                    }
+//                }
+//
+//                if (oldTagList.size() > newTagList.size()){
+//                    for (int i=newTagList.size(); i<oldTagList.size(); i++){
+//                        int addCount = oldData.get(index).getWordTag().get(i).getCount();
+//                        int count = oldData.get(index).getWordTag().get(0).getCount();
+//                        oldData.get(index).getWordTag().get(0).setCount(count+addCount);
+//                        oldData.get(index).getWordTag().remove(i--);
+//                    }
+//                }
+
+                //ver2
+                if (oldTagList.size() == newTagList.size()) {
+                    replaceOldTag(oldData.get(index).getWordTag(), newTagList);
+                } else {
+//                    List<TagCountData> data = oldData.get(index).getWordTag();
+//
+//                    Collections.sort(data);
+//                    Collections.sort(newTagList);
+//
+//                    for (int i=0; i<data.size(); i++){
+//                        if (!data.get(i).getName().equals(newTagList.get(i))){
+//                            data.get(i).setName(newTagList.get(i));
+//                        }
+//                    }
+
+                    for (final String newTagElement : newTagList) {
+                        if (!oldTagList.contains(newTagElement)) {
+                            oldData.get(index).getWordTag().add(new TagCountData(newTagElement));
+                            break swtch;
+                        }
+                    }
+                }
+
                 break;
 
             case TAG_LEMMA:
@@ -320,6 +367,16 @@ public class Controller {
         return result;
     }
 
+    private void replaceOldTag(final List<TagCountData> oldTags, final List<String> newTags){
+        Collections.sort(oldTags);
+        Collections.sort(newTags);
+
+        for (int i=0; i<oldTags.size(); i++){
+            if (!oldTags.get(i).getName().equals(newTags.get(i))){
+                oldTags.get(i).setName(newTags.get(i));
+            }
+        }
+    }
 
     private String[] changeWord(final List<WordData> oldData, final Vector<Vector> newData, final int index) {
         newData.get(index).set(WORD, ((String) newData.get(index).get(WORD)).toLowerCase());
@@ -367,7 +424,7 @@ public class Controller {
             }
 
             if (!areCollectionsEqual(
-                    oldData.get(i).getWordTag(),
+                    tagListToStringListByName(oldData.get(i).getWordTag()),
                     stringToList(
                             (String) newData.get(i).get(TAG_WORD)
                     )

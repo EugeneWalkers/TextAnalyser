@@ -1,5 +1,6 @@
 package view;
 
+import utilities.TagColorData;
 import utilities.TagData;
 import utilities.TagsKeeper;
 
@@ -35,9 +36,9 @@ public class FullTagHelper extends JFrame {
         headers.add("Расшифровка");
         tags = new Vector<>();
 
-        final Map<String, TagData> tags = TagsKeeper.getAllTags();
+        final Map<String, TagColorData> tags = TagsKeeper.getAllTags();
 
-        for (final Map.Entry<String, TagData> entry : tags.entrySet()) {
+        for (final Map.Entry<String, TagColorData> entry : tags.entrySet()) {
             final Vector<String> tempData = new Vector<>();
 
             tempData.add(entry.getKey());
