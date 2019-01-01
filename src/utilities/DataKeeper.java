@@ -3,11 +3,13 @@ package utilities;
 import javafx.util.Pair;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
 import static utilities.Constants.*;
 import static utilities.StringUtilities.stringToList;
+import static utilities.StringUtilities.tagStringToList;
 
 public final class DataKeeper {
 
@@ -75,12 +77,10 @@ public final class DataKeeper {
                     wordDatas.add(new WordData(
 
                             strings[WORD],
-                            stringToList(strings[TAG_WORD]),
-                            //stringToList(strings[DESCRIPTION_TAG_WORD]),
+                            tagStringToList(strings[TAG_WORD]),
                             Integer.parseInt(strings[COUNT]),
                             stringToList(strings[WORD_LEMMA]),
                             stringToList(strings[TAG_LEMMA])
-                            //stringToList(strings[DESCRIPTION_TAG_LEMMA])
                     ));
                     builder.delete(0, builder.length());
                 }

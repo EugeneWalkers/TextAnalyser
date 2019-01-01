@@ -20,6 +20,9 @@ public class Constants {
 
     public final static String LINE_SEPARATOR = "<br>";
 
+    public final static String SEPARATOR_FOR_TAGS = "_";
+
+
     public final static int AMOUNT = 5;
 
     static {

@@ -1,6 +1,7 @@
 package view;
 
 import controller.Controller;
+import utilities.TagColorData;
 import utilities.TagData;
 import utilities.TagsKeeper;
 
@@ -102,7 +103,7 @@ public class PaintedTextFrame extends JFrame {
 
     private void appendTag(final String tag) {
         final StyledDocument document = input.getStyledDocument();
-        final TagData data = TagsKeeper.getTagData(tag.trim());
+        final TagColorData data = TagsKeeper.getTagData(tag.trim());
         StyleConstants.setForeground(style, data.getColor());
 
         try {
