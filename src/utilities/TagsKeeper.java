@@ -45,6 +45,10 @@ public final class TagsKeeper {
         tags.put("WP", new TagColorData("Wh-pronoun", ColorUtilities.getRandomColor()));
         tags.put("WP$", new TagColorData("Possessive wh-pronoun", ColorUtilities.getRandomColor()));
         tags.put("WRB", new TagColorData("Wh-adverb", ColorUtilities.getRandomColor()));
+        tags.put(".", new TagColorData(".", ColorUtilities.getRandomColor()));
+        tags.put(",", new TagColorData(",", ColorUtilities.getRandomColor()));
+        tags.put(":", new TagColorData(":", ColorUtilities.getRandomColor()));
+        tags.put("''", new TagColorData("''", ColorUtilities.getRandomColor()));
     }
 
     public static TagColorData getTagData(final String tag) {

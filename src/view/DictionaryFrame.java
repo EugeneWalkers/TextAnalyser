@@ -143,8 +143,13 @@ public class DictionaryFrame extends JFrame {
             tagStats.setVisible(true);
         });
         tagPairStat.addActionListener(e->{
-            tagPairStats.recalculate();
-            tagPairStats.setVisible(true);
+            bar.setIndeterminate(true);
+
+            new Thread(() -> {
+                tagPairStats.recalculate();
+                tagPairStats.setVisible(true);
+                bar.setIndeterminate(false);
+            }).start();
         });
 
 

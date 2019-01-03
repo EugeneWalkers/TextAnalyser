@@ -1,8 +1,6 @@
 package view;
 
-import controller.Controller;
 import utilities.TagColorData;
-import utilities.TagData;
 import utilities.TagsKeeper;
 
 import javax.swing.*;
@@ -18,7 +16,6 @@ public class PaintedTextFrame extends JFrame{
     private final JButton ok;
     private final JButton help;
     private final JTextPane input;
-    private final Style style;
 
     private List<String> text;
     private Thread thread = null;
@@ -27,7 +24,6 @@ public class PaintedTextFrame extends JFrame{
         ok = new JButton("Готово");
         help = new JButton("Показать подсказку");
         input = new JTextPane();
-        style = input.addStyle("Colorful", null);
     }
 
     PaintedTextFrame() {
@@ -48,7 +44,6 @@ public class PaintedTextFrame extends JFrame{
     }
 
     private void setComponents() {
-        //input.setFont(new Font("FreeMono", Font.PLAIN, 20));
         input.setEditable(false);
         input.setContentType("text/html");
     }
@@ -103,7 +98,6 @@ public class PaintedTextFrame extends JFrame{
 
     public void draw() {
         input.setText("<html><p>");
-        //appendSimpleText("<html><p>");
 
         thread = new Thread(new Runnable() {
             @Override
@@ -121,10 +115,7 @@ public class PaintedTextFrame extends JFrame{
                             appendTag(separatedWord[1]);
                         }
                     }
-
-
                 }
-
 
                 appendSimpleText("</p></html>");
                 thread = null;

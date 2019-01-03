@@ -1,7 +1,6 @@
 package view;
 
 import utilities.TagColorData;
-import utilities.TagData;
 import utilities.TagsKeeper;
 
 import javax.swing.*;

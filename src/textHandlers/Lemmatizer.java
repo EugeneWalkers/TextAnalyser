@@ -6,9 +6,12 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import edu.stanford.nlp.util.CoreMap;
-import javafx.util.Pair;
+import utilities.TagsKeeper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
 public class Lemmatizer {
 
@@ -67,7 +70,7 @@ public class Lemmatizer {
 
                 final List<String> words = getWordsByTokens(tokens);
 
-                for (int k=0; k<words.size(); k++){
+                for (int k = 0; k < words.size(); k++) {
                     words.set(k, tagger.tagString(words.get(k)));
                 }
                 result.addAll(words);
@@ -95,14 +98,14 @@ public class Lemmatizer {
 
                 final List<String> words = getWordsByTokens(tokens);
 
-                for (int k=0; k<words.size(); k++){
-                    words.set(k, tagger.tagString(words.get(k)));
-                    tags.addAll(getTag(words.get(k)));
+                for (int k = 0; k < words.size(); k++) {
+                    final String paintedWord = tagger.tagString(words.get(k));
+                    final String[] paintedWordInArray = paintedWord.split("_");
+                    if (paintedWordInArray.length > 1 && TagsKeeper.getAllTags().containsKey(paintedWordInArray[1].trim())) {
+                        tags.add(paintedWordInArray[1]);
+                    }
                 }
-                //result.addAll(words);
             }
-
-            //result.add(i == (textInLines.length - 1) ? "" : "\n");
         }
 
         return tags;
@@ -132,10 +135,10 @@ public class Lemmatizer {
         return addSpaces(Arrays.asList(result));
     }
 
-    private List<String> addSpaces(final List<String> text){
+    private List<String> addSpaces(final List<String> text) {
         final List<String> result = new ArrayList<>();
 
-        for (final String word: text){
+        for (final String word : text) {
             result.add(word);
             result.add(" ");
         }
