@@ -7,20 +7,25 @@ import utilities.TagsKeeper;
 
 import javax.swing.*;
 import javax.swing.text.*;
+import javax.swing.text.html.HTMLDocument;
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 
-import static utilities.Constants.LINE_SEPARATOR;
 import static utilities.Constants.TAG_SEPARATOR;
 
-public class PaintedTextFrame extends JFrame {
+public class PaintedTextFrame extends JFrame{
     private final JButton ok;
+    private final JButton help;
     private final JTextPane input;
     private final Style style;
+
     private List<String> text;
+    private Thread thread = null;
 
     {
         ok = new JButton("Готово");
+        help = new JButton("Показать подсказку");
         input = new JTextPane();
         style = input.addStyle("Colorful", null);
     }
@@ -43,73 +48,162 @@ public class PaintedTextFrame extends JFrame {
     }
 
     private void setComponents() {
-        input.setEditable(true);
-        input.setFont(new Font("FreeMono", Font.PLAIN, 20));
+        //input.setFont(new Font("FreeMono", Font.PLAIN, 20));
         input.setEditable(false);
-        input.setDocument(new DefaultStyledDocument());
         input.setContentType("text/html");
     }
 
     private void addComponents() {
-        final FlowLayout layout = new FlowLayout();
+        final BorderLayout mainBorderLayout = new BorderLayout();
+        final GridBagLayout gridBagLayout = new GridBagLayout();
+        final GridBagConstraints constraints = new GridBagConstraints();
+
+        setLayout(mainBorderLayout);
 
         final JPanel panel = new JPanel();
-        panel.setLayout(layout);
+        panel.setLayout(gridBagLayout);
 
         final JScrollPane jScrollPane = new JScrollPane(input);
 
-        add(jScrollPane, BorderLayout.CENTER);
+        constraints.insets = new Insets(10, 10, 5, 10);
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.weightx = 1;
+        constraints.weighty = 5;
+        constraints.gridwidth = 2;
+        panel.add(jScrollPane, constraints);
 
-        panel.add(ok);
+        constraints.insets = new Insets(5, 10, 10, 10);
+        constraints.gridy = 1;
+        constraints.weighty = 1;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.SOUTHWEST;
+        panel.add(help, constraints);
 
-        add(panel, BorderLayout.PAGE_END);
+        constraints.gridx = 1;
+        constraints.anchor = GridBagConstraints.SOUTHEAST;
+        panel.add(ok, constraints);
+
+
+        add(panel, BorderLayout.CENTER);
     }
 
     private void setListeners() {
-        ok.addActionListener(e -> setVisible(false));
+        ok.addActionListener(e -> {
+            setVisible(false);
+            if (thread != null){
+                thread.interrupt();
+            }
+        });
+        help.addActionListener(e -> FullTagHelper.getInstance().setVisible(true));
     }
 
     public void draw() {
-        input.setText(null);
+        input.setText("<html><p>");
+        //appendSimpleText("<html><p>");
 
-        new Thread(() -> {
-            for (final String word : text) {
-                if (!word.equals(LINE_SEPARATOR)) {
-                    final String[] separatedWord = word.split(TAG_SEPARATOR);
-                    appendText(separatedWord[0]);
+        thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
 
-                    if (separatedWord.length > 1) {
-                        appendText(TAG_SEPARATOR);
-                        appendTag(separatedWord[1]);
+                for (final String word : text) {
+                    if (word.equals("\n")){
+                        appendSeparator();
+                    } else{
+                        final String[] separatedWord = word.split(TAG_SEPARATOR);
+                        appendText("<b style=\"color:black\">"+ separatedWord[0]+"</b>");
+
+                        if (separatedWord.length > 1){
+                            appendText(TAG_SEPARATOR);
+                            appendTag(separatedWord[1]);
+                        }
                     }
+
+
                 }
-                else{
-                    appendText(LINE_SEPARATOR);
-                }
+
+
+                appendSimpleText("</p></html>");
+                thread = null;
             }
-        }).start();
+        });
+
+        thread.start();
+    }
+
+    private void appendSimpleText(final String text){
+        final HTMLDocument doc = (HTMLDocument)input.getStyledDocument();
+
+        try {
+            doc.insertAfterEnd(doc.getCharacterElement(doc.getLength()), text);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void appendSeparator(){
+        final HTMLDocument doc = (HTMLDocument)input.getStyledDocument();
+
+        try {
+            doc.insertAfterEnd(doc.getCharacterElement(doc.getLength()), "<br/>");
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void appendText(final String text) {
-        final StyledDocument document = input.getStyledDocument();
-        StyleConstants.setForeground(style, Color.BLACK);
+        final HTMLDocument doc = (HTMLDocument)input.getStyledDocument();
 
         try {
-            document.insertString(document.getLength(), text, style);
+            doc.insertAfterEnd(doc.getCharacterElement(doc.getLength()), "<b style=\"color:black\">"+ text+"</b>");
         } catch (BadLocationException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        //input.setText(input.getText() + "<b style=\"color:black\">"+ text+"</b>");
+//        final StyledDocument document = input.getStyledDocument();
+//        StyleConstants.setForeground(style, Color.BLACK);
+//
+//        try {
+//            document.insertString(document.getLength(), text, style);
+//        } catch (BadLocationException e) {
+//            e.printStackTrace();
+//        }
     }
 
     private void appendTag(final String tag) {
-        final StyledDocument document = input.getStyledDocument();
+        final HTMLDocument doc = (HTMLDocument)input.getStyledDocument();
         final TagColorData data = TagsKeeper.getTagData(tag.trim());
-        StyleConstants.setForeground(style, data.getColor());
 
         try {
-            document.insertString(document.getLength(), tag, style);
+            doc.insertAfterEnd(
+                    doc.getCharacterElement(doc.getLength()),
+                    "<b style=\"color: #" +
+                            Integer.toHexString(data.getColor().getRGB()).substring(2) +
+                            "\">"+ tag+"</b>");
         } catch (BadLocationException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+//        final StyledDocument document = input.getStyledDocument();
+//        StyleConstants.setForeground(style, data.getColor());
+//
+//        try {
+//            document.insertString(document.getLength(), tag, style);
+//        } catch (BadLocationException e) {
+//            e.printStackTrace();
+//        }
+
+        //input.setText(input.getText() + "<b style=\"color: #" + Integer.toHexString(data.getColor().getRGB()) + "\">"+ tag+"</b>");
     }
 }

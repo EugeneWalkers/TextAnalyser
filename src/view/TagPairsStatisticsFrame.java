@@ -1,6 +1,8 @@
 package view;
 
 import controller.Controller;
+import javafx.util.Pair;
+import textHandlers.Lemmatizer;
 import utilities.TagCountData;
 import utilities.WordData;
 
@@ -8,12 +10,14 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.util.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 
 import static utilities.StringUtilities.tagListToStringWithoutNumb;
 
-public class StatisticsFrame extends JFrame {
+public class TagPairsStatisticsFrame extends JFrame {
 
     private final JButton ok;
     private final JButton refresh;
@@ -22,13 +26,15 @@ public class StatisticsFrame extends JFrame {
     private final Vector<String> headers;
     private final Vector<Vector> tableData;
 
+    private final Controller controller;
+
     {
+        controller = Controller.getInstance();
         tableData = new Vector<>();
         ok = new JButton("Готово");
         refresh = new JButton("Обновить");
         table = new JTable();
         model = new DefaultTableModel() {
-
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 if (columnIndex == 2) {
@@ -46,60 +52,29 @@ public class StatisticsFrame extends JFrame {
         table.setModel(model);
         table.setRowSorter(new TableRowSorter<>(model));
         headers = new Vector<>();
-        headers.add("Слово");
-        headers.add("Тег");
-        headers.add("Статистика");
+        headers.add("Тег1");
+        headers.add("Тег2");
+        headers.add("Количество");
 
         model.setColumnIdentifiers(headers);
     }
 
-    public StatisticsFrame() {
+    public TagPairsStatisticsFrame() {
         super("Статистика");
         setupComponents();
         setListeners();
     }
 
-
-    private void add(final String word, final TagCountData tag){
-        final Vector temp = new Vector();
-        temp.add(word);
-        temp.add(tag.getName());
-        temp.add(tag.getCount());
-
-        tableData.add(temp);
-    }
-
-
     public void recalculate() {
+        final Map<Pair<String, String>, Integer> tagStatistics = controller.getTagPairsFromAllFiles();
         tableData.clear();
-
-        final List<WordData> data = Controller.getInstance().getData();
-
-        for (final WordData tempData : data) {
-            final List<TagCountData> tags = tempData.getWordTag();
-
-            for (final TagCountData tag : tags) {
-                add(tempData.getWord(), tag);
-            }
+        for (Map.Entry<Pair<String, String>, Integer> entry : tagStatistics.entrySet()) {
+            final Vector tempData = new Vector();
+            tempData.add(entry.getKey().getKey());
+            tempData.add(entry.getKey().getValue());
+            tempData.add(entry.getValue());
+            tableData.add(tempData);
         }
-
-        model.setDataVector(tableData, headers);
-        model.fireTableDataChanged();
-    }
-
-    public void recalculate2() {
-        tableData.clear();
-
-        final List<WordData> data = Controller.getInstance().getData();
-
-        for (final WordData tempData : data) {
-            final List<TagCountData> tags = tempData.getWordTag();
-
-            for (final TagCountData tag : tags) {
-                add(tempData.getWord(), tag);
-            }
-        }
-
         model.setDataVector(tableData, headers);
         model.fireTableDataChanged();
     }

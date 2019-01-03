@@ -46,7 +46,11 @@ public class DictionaryFrame extends JFrame {
     private final StringBuilder text;
     private final JPanel files;
     private final JButton stat;
+    private final JButton tagStat;
+    private final JButton tagPairStat;
     private final StatisticsFrame stats;
+    private final TagStatisticsFrame tagStats;
+    private final TagPairsStatisticsFrame tagPairStats;
 
     private File file;
     private int selectedRow;
@@ -62,6 +66,8 @@ public class DictionaryFrame extends JFrame {
         chooser = new JFileChooser(DIR);
         bar = new JProgressBar();
         stat = new JButton("Статистика");
+        tagStat = new JButton("Статистика по тегам");
+        tagPairStat = new JButton("Статистика по парам тегов");
         handler = new JButton("Составить словарь");
         cleaner = new JButton("Удалить словарь");
         adder = new JButton("Добавить слово");
@@ -92,10 +98,13 @@ public class DictionaryFrame extends JFrame {
         };
 
         stats = new StatisticsFrame();
+        tagStats = new TagStatisticsFrame();
+        tagPairStats = new TagPairsStatisticsFrame();
 
         setAllButtonsEnabled(false);
         cleaner.setEnabled(true);
         stats.setEnabled(true);
+        tagStats.setEnabled(true);
     }
 
     private DictionaryFrame() {
@@ -128,6 +137,14 @@ public class DictionaryFrame extends JFrame {
         stat.addActionListener(e ->{
             stats.recalculate();
             stats.setVisible(true);
+        });
+        tagStat.addActionListener(e ->{
+            tagStats.recalculate();
+            tagStats.setVisible(true);
+        });
+        tagPairStat.addActionListener(e->{
+            tagPairStats.recalculate();
+            tagPairStats.setVisible(true);
         });
 
 
@@ -217,7 +234,7 @@ public class DictionaryFrame extends JFrame {
     }
 
     private void setFrame() {
-        setSize(1820, 980);
+        setSize(1366, 730);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -323,6 +340,8 @@ public class DictionaryFrame extends JFrame {
         buttons.add(allTags);
         buttons.add(painter);
         buttons.add(stat);
+        buttons.add(tagStat);
+        buttons.add(tagPairStat);
 
         add(scrollerForResults, BorderLayout.CENTER);
 

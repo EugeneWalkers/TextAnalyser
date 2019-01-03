@@ -6,11 +6,9 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import edu.stanford.nlp.util.CoreMap;
+import javafx.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class Lemmatizer {
 
@@ -79,6 +77,35 @@ public class Lemmatizer {
         }
 
         return result;
+    }
+
+    public List<String> getTagList(final String text) {
+        final String[] textInLines = text.split("\n");
+        final List<String> tags = new ArrayList<>();
+
+        for (int i = 0; i < textInLines.length; i++) {
+            final Annotation tokenAnnotation = new Annotation(textInLines[i]);
+
+            pipeline.annotate(tokenAnnotation);
+
+            final List<CoreMap> sentences = tokenAnnotation.get(CoreAnnotations.SentencesAnnotation.class);
+
+            for (final CoreMap sentence : sentences) {
+                final String tokens = sentence.toShorterString("Tokens");
+
+                final List<String> words = getWordsByTokens(tokens);
+
+                for (int k=0; k<words.size(); k++){
+                    words.set(k, tagger.tagString(words.get(k)));
+                    tags.addAll(getTag(words.get(k)));
+                }
+                //result.addAll(words);
+            }
+
+            //result.add(i == (textInLines.length - 1) ? "" : "\n");
+        }
+
+        return tags;
     }
 
     private boolean isPaintNeeded(final String word) {
