@@ -163,19 +163,40 @@ public class Controller {
         mapReduce.runCommand(REDUCE, outSort, temporaryOutput);
         rewritePairsToWordData();
         mergeFiles();
-        sortPairs();
+        sortWordData();
         cleanFiles();
     }
 
     public void addWord(final String word) {
         DataKeeper.writeTextToFile(WordData.Builder.buildEmptyWord(word).toString(), temporaryOutput);
         mergeFiles();
-        sortPairs();
+        sortWordData();
         temporaryOutput.delete();
     }
 
     public List<String> getPaintedText(final String text) {
         return lemmatizer.paintTextWithPosTags(text);
+    }
+
+    public Map<Pair<String, String>, Integer> getTagPairsFromAllFiles() {
+        final Map<Pair<String, String>, Integer> tagStatistics = new HashMap<>();
+
+        for (int i = 0; i < files.size(); i++) {
+            final String text = DataKeeper.readTextFromFile(files.get(i));
+            final List<String> tags = getTagPairs(text);
+
+            for (int j = 0; j < tags.size() - 1; j++) {
+                Pair<String, String> tempPair = new Pair<>(tags.get(j), tags.get(j + 1));
+                final int value = tagStatistics.getOrDefault(tempPair, 0);
+                tagStatistics.put(tempPair, value + 1);
+            }
+        }
+
+        return tagStatistics;
+    }
+
+    public List<String> getTagPairs(final String text) {
+        return lemmatizer.getTagList(text);
     }
 
     private void rewritePairsToWordData() {
@@ -230,7 +251,7 @@ public class Controller {
         DataKeeper.writeWordDatasToFile(oldPairs, dictionary);
     }
 
-    private void sortPairs() {
+    private void sortWordData() {
         final List<WordData> wordDatas = DataKeeper.readWordDatasFromFile(dictionary);
         Collections.sort(wordDatas);
         DataKeeper.writeWordDatasToFile(wordDatas, dictionary);
@@ -285,7 +306,15 @@ public class Controller {
     private void replaceStringInAllFiles(final String from, final String to) {
         for (final File file : files) {
             final String text = DataKeeper.readTextFromFile(file);
-            DataKeeper.writeTextToFile(text.replaceAll(from, to), file);
+            DataKeeper.writeTextToFile(text
+                            .replaceAll(" " + from + " ", " " + to + " ")
+                            .replaceAll(" " + from + ",", " " + to + ",")
+                            .replaceAll(" " + from + "\\!", " " + to + "!")
+                            .replaceAll(" " + from + "\\?", " " + to + "?")
+                            .replaceAll(" " + from + "\\.", " " + to + ".")
+                            .replaceAll(" " + from + ":", " " + to + ":")
+                            .replaceAll(" " + from + ";", " " + to + ";"),
+                    file);
         }
     }
 
@@ -333,6 +362,17 @@ public class Controller {
                 if (oldTagList.size() == newTagList.size()) {
                     replaceOldTag(oldData.get(index).getWordTag(), newTagList);
                 } else {
+//                    List<TagCountData> data = oldData.get(index).getWordTag();
+//
+//                    Collections.sort(data);
+//                    Collections.sort(newTagList);
+//
+//                    for (int i=0; i<data.size(); i++){
+//                        if (!data.get(i).getName().equals(newTagList.get(i))){
+//                            data.get(i).setName(newTagList.get(i));
+//                        }
+//                    }
+
                     for (final String newTagElement : newTagList) {
                         if (!oldTagList.contains(newTagElement)) {
                             oldData.get(index).getWordTag().add(new TagCountData(newTagElement));
@@ -356,14 +396,13 @@ public class Controller {
         return result;
     }
 
-    private void replaceOldTag(final List<TagCountData> oldTags, final List<String> newTags){
+    private void replaceOldTag(final List<TagCountData> oldTags, final List<String> newTags) {
         Collections.sort(oldTags);
         Collections.sort(newTags);
 
-        for (int i=0; i<oldTags.size(); i++){
-            if (!oldTags.get(i).getName().equals(newTags.get(i))){
+        for (int i = 0; i < oldTags.size(); i++) {
+            if (!oldTags.get(i).getName().equals(newTags.get(i))) {
                 oldTags.get(i).setName(newTags.get(i));
-                return;
             }
         }
     }
@@ -419,7 +458,7 @@ public class Controller {
                             (String) newData.get(i).get(TAG_WORD)
                     )
             )
-            ) {
+                    ) {
                 index = i;
                 type = TAG_WORD;
                 break;

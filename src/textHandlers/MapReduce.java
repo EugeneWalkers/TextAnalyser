@@ -17,7 +17,7 @@ public class MapReduce {
 
     public void runCommand(final String CommandId, final File input, final File output) {
 
-        ProcessBuilder bd = null;
+        ProcessBuilder bd;
 
         switch (CommandId) {
             default:
@@ -34,11 +34,13 @@ public class MapReduce {
         bd.redirectOutput(output);
 
         Process process = null;
+
         try {
             process = bd.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         try {
             if (process != null) {
                 process.waitFor();
@@ -47,6 +49,7 @@ public class MapReduce {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
         if (process != null) {
             process.destroy();
         }

@@ -13,7 +13,7 @@ import java.util.List;
 
 import static utilities.StringUtilities.tagListToStringWithoutNumb;
 
-public class StatisticsFrame extends JFrame {
+public class TagStatisticsFrame extends JFrame {
 
     private final JButton ok;
     private final JButton refresh;
@@ -21,9 +21,11 @@ public class StatisticsFrame extends JFrame {
     private final DefaultTableModel model;
     private final Vector<String> headers;
     private final Vector<Vector> tableData;
+    private final Map<String, Integer> tagStatistics;
 
     {
         tableData = new Vector<>();
+        tagStatistics = new HashMap<>();
         ok = new JButton("Готово");
         refresh = new JButton("Обновить");
         table = new JTable();
@@ -31,10 +33,10 @@ public class StatisticsFrame extends JFrame {
 
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 2) {
-                    return Integer.class;
-                } else {
+                if (columnIndex == 0) {
                     return String.class;
+                } else {
+                    return Integer.class;
                 }
             }
 
@@ -46,58 +48,70 @@ public class StatisticsFrame extends JFrame {
         table.setModel(model);
         table.setRowSorter(new TableRowSorter<>(model));
         headers = new Vector<>();
-        headers.add("Слово");
         headers.add("Тег");
-        headers.add("Статистика");
+        headers.add("Расшифровка");
 
         model.setColumnIdentifiers(headers);
     }
 
-    public StatisticsFrame() {
+    public TagStatisticsFrame() {
         super("Статистика");
         setupComponents();
         setListeners();
     }
 
 
-    private void add(final String word, final TagCountData tag){
-        final Vector temp = new Vector();
-        temp.add(word);
-        temp.add(tag.getName());
-        temp.add(tag.getCount());
+    private void addOneByOneTag(final TagCountData tag){
+        final String key = tag.getName();
 
-        tableData.add(temp);
+        if (!tagStatistics.containsKey(key)) {
+            tagStatistics.put(key, tag.getCount());
+        } else {
+            int a = tagStatistics.get(key);
+            tagStatistics.put(key, a + tag.getCount());
+        }
     }
 
+    private void addSeveralTags(final List<TagCountData> tags){
+        final String key = tagListToStringWithoutNumb(tags);
+        int count = 0;
+
+        for (int i=0; i<tags.size(); i++){
+            count+=tags.get(i).getCount();
+        }
+
+        if (!tagStatistics.containsKey(key)) {
+            tagStatistics.put(key, count);
+        } else {
+            int a = tagStatistics.get(key);
+            tagStatistics.put(key, a + count);
+        }
+    }
 
     public void recalculate() {
-        tableData.clear();
-
         final List<WordData> data = Controller.getInstance().getData();
 
         for (final WordData tempData : data) {
+
             final List<TagCountData> tags = tempData.getWordTag();
 
             for (final TagCountData tag : tags) {
-                add(tempData.getWord(), tag);
+                addOneByOneTag(tag);
+            }
+
+            if (tags.size() > 1){
+                addSeveralTags(tags);
             }
         }
 
-        model.setDataVector(tableData, headers);
-        model.fireTableDataChanged();
-    }
-
-    public void recalculate2() {
         tableData.clear();
 
-        final List<WordData> data = Controller.getInstance().getData();
+        for (final Map.Entry<String, Integer> entry : tagStatistics.entrySet()) {
+            final Vector temp = new Vector();
+            temp.add(entry.getKey());
+            temp.add(entry.getValue());
 
-        for (final WordData tempData : data) {
-            final List<TagCountData> tags = tempData.getWordTag();
-
-            for (final TagCountData tag : tags) {
-                add(tempData.getWord(), tag);
-            }
+            tableData.add(temp);
         }
 
         model.setDataVector(tableData, headers);

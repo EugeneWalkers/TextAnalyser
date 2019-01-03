@@ -58,8 +58,8 @@ public class FullTagHelper extends JFrame {
                     final boolean hasFocus,
                     final int row,
                     final int column) {
-                final JLabel label = (JLabel)super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                final Color bc = TagsKeeper.getTagData(FullTagHelper.this.tags.get(row).get(0)).getColor();
+                final JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                final Color bc = TagsKeeper.getTagData((String) value).getColor();
 
                 label.setForeground(bc);
 

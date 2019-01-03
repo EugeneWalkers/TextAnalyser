@@ -1,3 +1,5 @@
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+import textHandlers.Lemmatizer;
 import view.DictionaryFrame;
 
 import javax.swing.*;
